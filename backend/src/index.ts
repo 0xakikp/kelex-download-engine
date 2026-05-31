@@ -57,6 +57,7 @@ await app.register(systemRoutes, { prefix: '/api/v1' });
 
 // Health check
 app.get('/health', async () => ({ status: 'ok', version: '2.0.0' }));
+app.get('/api/v1/health', async () => ({ status: 'ok', version: '2.0.0' }));
 
 try {
   await app.listen({ port: PORT, host: HOST });
