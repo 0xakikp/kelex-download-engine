@@ -5,7 +5,7 @@
   "version": "2.0.0",
   "description": "Universal Download Manager - Download anything from anywhere at maximum speed",
   "type": "module",
-  "main": "electron/main.ts",
+  "main": "electron/main.js",
   "author": {
     "name": "Kelex",
     "email": "support@kelex.app"
@@ -13,31 +13,25 @@
   "homepage": "https://kelex.app",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kelex/downloader.git"
+    "url": "https://github.com/0xakikp/kelex-download-engine.git"
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "--- ELECTRON ---": "",
-    "electron:dev": "npm run build && electron electron/main.ts",
-    "electron:start": "electron electron/main.ts",
+    "electron:dev": "npm run build && electron electron/main.js",
+    "electron:start": "electron electron/main.js",
     "electron:build-mac": "npm run build && electron-builder --mac --publish=never",
     "electron:build-mac-dmg": "npm run build && electron-builder --mac dmg --publish=never",
     "electron:build-win": "npm run build && electron-builder --win --publish=never",
-    "electron:build-win-portable": "npm run build && electron-builder --win portable --publish=never",
     "electron:build-linux": "npm run build && electron-builder --linux --publish=never",
     "electron:build-all": "npm run build && electron-builder --mac --win --linux --publish=never",
     "electron:pack": "npm run build && electron-builder --dir",
-    "electron:publish": "npm run build && electron-builder --publish=always",
-    "--- DOCKER ---": "",
     "docker:build": "docker build -t kelex/downloader:latest .",
-    "docker:run": "docker run -p 3000:80 --name kelex-downloader kelex/downloader:latest",
-    "docker:compose": "docker-compose -f docker-compose.yml up -d",
-    "docker:compose-build": "docker-compose -f docker-compose.yml up -d --build",
-    "docker:stop": "docker-compose -f docker-compose.yml down",
-    "docker:logs": "docker-compose -f docker-compose.yml logs -f"
+    "docker:compose": "docker compose -f docker-compose.yml up -d",
+    "docker:compose-build": "docker compose -f docker-compose.yml up -d --build",
+    "docker:stop": "docker compose -f docker-compose.yml down"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -72,7 +66,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
-    "electron-updater": "^6.3.9",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.40.0",
     "gsap": "^3.15.0",
@@ -100,8 +93,9 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.7",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "electron-updater": "^6.8.3",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
@@ -114,6 +108,52 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4"
+  },
+  "build": {
+    "appId": "app.kelex.downloader",
+    "productName": "Kelex Downloader",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "0xakikp",
+      "repo": "kelex-download-engine"
+    }
   },
   "engines": {
     "node": ">=20.0.0"

@@ -56,16 +56,6 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
-function GlassCard({ children, className = '', glow = false }: { children: React.ReactNode; className?: string; glow?: boolean }) {
-  return (
-    <div className={`group relative rounded-xl overflow-hidden transition-all duration-300 ${glow ? 'hover:shadow-[0_0_30px_rgba(10,132,255,0.06)]' : ''} ${className}`}>
-      <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-      <div className="relative p-5">{children}</div>
-    </div>
-  );
-}
-
 function SettingRow({ label, desc, children }: { label: string; desc?: string; children?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-white/[0.03] last:border-0">
@@ -87,7 +77,7 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-function Select({ value, onChange, options }: { value: string; onChange: (v: any) => void; options: string[] }) {
+function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
       className="bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs outline-none text-white/70 focus:border-accent-blue/30 cursor-pointer">
@@ -237,55 +227,75 @@ export default function Settings() {
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-1"><Palette size={18} className="text-accent-blue" /><h2 className="font-display font-semibold text-lg text-white/90">General</h2></div>
             <div className="grid grid-cols-2 gap-4">
-              <GlassCard glow>
-                <SectionHeader label="Theme" />
-                <div className="flex gap-3">
-                  {[
-                    { name: 'Pitch Black', bg: '#050505', card: '#0A0A0A', val: 'dark' },
-                    { name: 'Dark', bg: '#0f0f13', card: '#1a1a22', val: 'dark' },
-                    { name: 'Light', bg: '#F5F5F7', card: '#FFFFFF', val: 'light' },
-                  ].map(t => (
-                    <button key={t.name} onClick={() => setTheme(t.val as 'dark' | 'light')}
-                      className={`flex-1 rounded-lg border p-3 text-left transition-all ${theme === t.val && (t.name !== 'Light' || theme === 'light') ? 'border-accent-blue/50 ring-1 ring-accent-blue/20' : 'border-white/[0.04] hover:border-white/[0.08]'}`}>
-                      <div className="h-14 rounded-md mb-2 border border-white/[0.04]" style={{ background: `linear-gradient(135deg, ${t.bg} 50%, ${t.card} 50%)` }} />
-                      <p className="text-xs text-white/70">{t.name}</p>
-                    </button>
-                  ))}
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(10,132,255,0.06)]">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Theme" />
+                  <div className="flex gap-3">
+                    {[
+                      { name: 'Pitch Black', bg: '#050505', card: '#0A0A0A', val: 'dark' },
+                      { name: 'Dark', bg: '#0f0f13', card: '#1a1a22', val: 'dark' },
+                      { name: 'Light', bg: '#F5F5F7', card: '#FFFFFF', val: 'light' },
+                    ].map(t => (
+                      <button key={t.name} onClick={() => setTheme(t.val as 'dark' | 'light')}
+                        className={`flex-1 rounded-lg border p-3 text-left transition-all ${theme === t.val && (t.name !== 'Light' || theme === 'light') ? 'border-accent-blue/50 ring-1 ring-accent-blue/20' : 'border-white/[0.04] hover:border-white/[0.08]'}`}>
+                        <div className="h-14 rounded-md mb-2 border border-white/[0.04]" style={{ background: `linear-gradient(135deg, ${t.bg} 50%, ${t.card} 50%)` }} />
+                        <p className="text-xs text-white/70">{t.name}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </GlassCard>
-              <GlassCard>
-                <SectionHeader label="Accent Color" />
-                <div className="flex gap-2.5">
-                  {accentColors.map(c => (
-                    <button key={c.value} onClick={() => setAccentColor(c.value)}
-                      className={`w-8 h-8 rounded-full transition-all duration-200 hover:scale-110 ${accentColor === c.value ? 'ring-2 ring-white/70 scale-110' : 'opacity-50 hover:opacity-100'}`}
-                      style={{ backgroundColor: c.value }} title={c.name} />
-                  ))}
-                </div>
-                <div className="mt-4 space-y-3">
-                  <SettingRow label="Font size"><Select value={fontSize} onChange={setFontSize} options={['Small', 'Medium', 'Large']} /></SettingRow>
-                  <SettingRow label="Animations" desc="UI transitions"><Toggle checked={animations} onChange={setAnimations} /></SettingRow>
-                </div>
-              </GlassCard>
-            </div>
-            <GlassCard>
-              <SectionHeader label="Download Folder" />
-              <div className="flex gap-2">
-                <input type="text" value={downloadFolder} onChange={e => setDownloadFolder(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-xs font-mono text-white/60 outline-none focus:border-accent-blue/30" />
-                <button className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/40 hover:text-white/80 transition-colors"><FolderOpen size={15} /></button>
               </div>
-            </GlassCard>
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Accent Color" />
+                  <div className="flex gap-2.5">
+                    {accentColors.map(c => (
+                      <button key={c.value} onClick={() => setAccentColor(c.value)}
+                        className={`w-8 h-8 rounded-full transition-all duration-200 hover:scale-110 ${accentColor === c.value ? 'ring-2 ring-white/70 scale-110' : 'opacity-50 hover:opacity-100'}`}
+                        style={{ backgroundColor: c.value }} title={c.name} />
+                    ))}
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <SettingRow label="Font size"><Select value={fontSize} onChange={(v: string) => setFontSize(v as typeof fontSize)} options={['Small', 'Medium', 'Large']} /></SettingRow>
+                    <SettingRow label="Animations" desc="UI transitions"><Toggle checked={animations} onChange={setAnimations} /></SettingRow>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="Download Folder" />
+                <div className="flex gap-2">
+                  <input type="text" value={downloadFolder} onChange={e => setDownloadFolder(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-xs font-mono text-white/60 outline-none focus:border-accent-blue/30" />
+                  <button className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/40 hover:text-white/80 transition-colors"><FolderOpen size={15} /></button>
+                </div>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <GlassCard>
-                <SectionHeader label="After Download" />
-                <SettingRow label="Action on complete">
-                  <Select value={afterDownload} onChange={setAfterDownload} options={['Nothing', 'Show in folder', 'Play file']} />
-                </SettingRow>
-              </GlassCard>
-              <GlassCard>
-                <SectionHeader label="Language" />
-                <Select value={language} onChange={setLanguage} options={['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Portuguese', 'Russian']} />
-              </GlassCard>
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="After Download" />
+                  <SettingRow label="Action on complete">
+                    <Select value={afterDownload} onChange={(v: string) => setAfterDownload(v as typeof afterDownload)} options={['Nothing', 'Show in folder', 'Play file']} />
+                  </SettingRow>
+                </div>
+              </div>
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Language" />
+                  <Select value={language} onChange={setLanguage} options={['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Portuguese', 'Russian']} />
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -295,63 +305,79 @@ export default function Settings() {
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-1"><Download size={18} className="text-accent-blue" /><h2 className="font-display font-semibold text-lg text-white/90">Downloads</h2></div>
             <div className="grid grid-cols-2 gap-4">
-              <GlassCard>
-                <SectionHeader label="Behavior" />
-                <div className="space-y-1.5">
-                  <SettingRow label="Auto-start downloads" desc="Begin immediately when added"><Toggle checked={autoStart} onChange={setAutoStart} /></SettingRow>
-                  <SettingRow label="Auto-retry failed" desc="Retry on connection failure"><Toggle checked={autoRetry} onChange={setAutoRetry} /></SettingRow>
-                  <SettingRow label="Max retry attempts"><NumberInput value={maxRetries} onChange={setMaxRetries} min={1} max={20} /></SettingRow>
-                  <SettingRow label="Start next when one finishes"><Toggle checked={startNextOnFinish} onChange={setStartNextOnFinish} /></SettingRow>
-                  <SettingRow label="Show completion dialog"><Toggle checked={showCompleteDialog} onChange={setShowCompleteDialog} /></SettingRow>
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Behavior" />
+                  <div className="space-y-1.5">
+                    <SettingRow label="Auto-start downloads" desc="Begin immediately when added"><Toggle checked={autoStart} onChange={setAutoStart} /></SettingRow>
+                    <SettingRow label="Auto-retry failed" desc="Retry on connection failure"><Toggle checked={autoRetry} onChange={setAutoRetry} /></SettingRow>
+                    <SettingRow label="Max retry attempts"><NumberInput value={maxRetries} onChange={setMaxRetries} min={1} max={20} /></SettingRow>
+                    <SettingRow label="Start next when one finishes"><Toggle checked={startNextOnFinish} onChange={setStartNextOnFinish} /></SettingRow>
+                    <SettingRow label="Show completion dialog"><Toggle checked={showCompleteDialog} onChange={setShowCompleteDialog} /></SettingRow>
+                  </div>
                 </div>
-              </GlassCard>
-              <GlassCard>
-                <SectionHeader label="Monitoring" />
-                <div className="space-y-1.5">
-                  <SettingRow label="Clipboard monitoring" desc="Auto-detect copied URLs"><Toggle checked={clipboardMonitor} onChange={setClipboardMonitor} /></SettingRow>
-                  <SettingRow label="Duplicate check" desc="Warn if URL already queued"><Toggle checked={duplicatesCheck} onChange={setDuplicatesCheck} /></SettingRow>
-                  <SettingRow label="Keep history"><Toggle checked={keepHistory} onChange={setKeepHistory} /></SettingRow>
-                  <SettingRow label="History retention (days)"><NumberInput value={historyDays} onChange={setHistoryDays} min={1} max={365} /></SettingRow>
-                  <SettingRow label="Auto-remove deleted files"><Toggle checked={autoRemoveDeleted} onChange={setAutoRemoveDeleted} /></SettingRow>
-                </div>
-              </GlassCard>
-            </div>
-            <GlassCard>
-              <SectionHeader label="File Types to Capture" />
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { key: 'video', label: 'Videos', icon: Film, ext: 'mp4, mkv, avi, mov, webm' },
-                  { key: 'audio', label: 'Audio', icon: Music, ext: 'mp3, flac, wav, aac, m4a, ogg' },
-                  { key: 'archive', label: 'Archives', icon: Archive, ext: 'zip, rar, 7z, tar, gz' },
-                  { key: 'document', label: 'Documents', icon: FileText, ext: 'pdf, doc, docx, txt, epub' },
-                  { key: 'image', label: 'Images', icon: Image, ext: 'jpg, png, gif, svg, webp' },
-                  { key: 'program', label: 'Programs', icon: Code, ext: 'exe, dmg, apk, deb, pkg' },
-                ].map(t => (
-                  <label key={t.key} className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${fileTypes[t.key as keyof typeof fileTypes] ? 'border-accent-blue/20 bg-accent-blue/[0.03]' : 'border-white/[0.03] bg-white/[0.01]'}`}>
-                    <input type="checkbox" checked={fileTypes[t.key as keyof typeof fileTypes]} onChange={e => setFileTypes(p => ({ ...p, [t.key]: e.target.checked }))} className="shrink-0" />
-                    <t.icon size={15} className="text-white/30 shrink-0" />
-                    <div>
-                      <p className="text-xs text-white/70">{t.label}</p>
-                      <p className="text-[9px] text-white/20 font-mono">{t.ext}</p>
-                    </div>
-                  </label>
-                ))}
               </div>
-            </GlassCard>
-            <GlassCard>
-              <SectionHeader label="Download Categories" />
-              <SettingRow label="Organize downloads by category" desc="Auto-sort into folders"><Toggle checked={categoriesEnabled} onChange={setCategoriesEnabled} /></SettingRow>
-              {categoriesEnabled && (
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  {['Videos', 'Audio', 'Documents', 'Archives', 'Programs', 'Images'].map(cat => (
-                    <div key={cat} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.03]">
-                      <HardDrive size={12} className="text-white/20" />
-                      <span className="text-[11px] text-white/50">{cat}</span>
-                    </div>
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Monitoring" />
+                  <div className="space-y-1.5">
+                    <SettingRow label="Clipboard monitoring" desc="Auto-detect copied URLs"><Toggle checked={clipboardMonitor} onChange={setClipboardMonitor} /></SettingRow>
+                    <SettingRow label="Duplicate check" desc="Warn if URL already queued"><Toggle checked={duplicatesCheck} onChange={setDuplicatesCheck} /></SettingRow>
+                    <SettingRow label="Keep history"><Toggle checked={keepHistory} onChange={setKeepHistory} /></SettingRow>
+                    <SettingRow label="History retention (days)"><NumberInput value={historyDays} onChange={setHistoryDays} min={1} max={365} /></SettingRow>
+                    <SettingRow label="Auto-remove deleted files"><Toggle checked={autoRemoveDeleted} onChange={setAutoRemoveDeleted} /></SettingRow>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="File Types to Capture" />
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { key: 'video', label: 'Videos', icon: Film, ext: 'mp4, mkv, avi, mov, webm' },
+                    { key: 'audio', label: 'Audio', icon: Music, ext: 'mp3, flac, wav, aac, m4a, ogg' },
+                    { key: 'archive', label: 'Archives', icon: Archive, ext: 'zip, rar, 7z, tar, gz' },
+                    { key: 'document', label: 'Documents', icon: FileText, ext: 'pdf, doc, docx, txt, epub' },
+                    { key: 'image', label: 'Images', icon: Image, ext: 'jpg, png, gif, svg, webp' },
+                    { key: 'program', label: 'Programs', icon: Code, ext: 'exe, dmg, apk, deb, pkg' },
+                  ].map(t => (
+                    <label key={t.key} className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${fileTypes[t.key as keyof typeof fileTypes] ? 'border-accent-blue/20 bg-accent-blue/[0.03]' : 'border-white/[0.03] bg-white/[0.01]'}`}>
+                      <input type="checkbox" checked={fileTypes[t.key as keyof typeof fileTypes]} onChange={e => setFileTypes(p => ({ ...p, [t.key]: e.target.checked }))} className="shrink-0" />
+                      <t.icon size={15} className="text-white/30 shrink-0" />
+                      <div>
+                        <p className="text-xs text-white/70">{t.label}</p>
+                        <p className="text-[9px] text-white/20 font-mono">{t.ext}</p>
+                      </div>
+                    </label>
                   ))}
                 </div>
-              )}
-            </GlassCard>
+              </div>
+            </div>
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="Download Categories" />
+                <SettingRow label="Organize downloads by category" desc="Auto-sort into folders"><Toggle checked={categoriesEnabled} onChange={setCategoriesEnabled} /></SettingRow>
+                {categoriesEnabled && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {['Videos', 'Audio', 'Documents', 'Archives', 'Programs', 'Images'].map(cat => (
+                      <div key={cat} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.03]">
+                        <HardDrive size={12} className="text-white/20" />
+                        <span className="text-[11px] text-white/50">{cat}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         );
 
@@ -359,45 +385,57 @@ export default function Settings() {
         return (
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-1"><Gauge size={18} className="text-accent-blue" /><h2 className="font-display font-semibold text-lg text-white/90">Bandwidth</h2></div>
-            <GlassCard glow>
-              <SectionHeader label="Speed Limiter" />
-              <SettingRow label="Enable speed limit" desc="Cap global download speed"><Toggle checked={speedLimitEnabled} onChange={setSpeedLimitEnabled} /></SettingRow>
-              {speedLimitEnabled && (
-                <div className="mt-4 pl-3 border-l border-accent-blue/15 space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between"><span className="text-xs text-white/40">Download limit</span><span className="font-mono text-xs text-white/60">{downloadSpeed} MB/s</span></div>
-                    <input type="range" min={1} max={100} value={downloadSpeed} onChange={e => setDownloadSpeed(Number(e.target.value))} className="w-full accent-accent-blue h-1 bg-white/[0.06] rounded-full appearance-none cursor-pointer" />
-                  </div>
-                </div>
-              )}
-            </GlassCard>
-            <div className="grid grid-cols-2 gap-4">
-              <GlassCard>
-                <SectionHeader label="Connections" />
-                <div className="space-y-3">
-                  <SettingRow label="Max concurrent downloads"><NumberInput value={maxConcurrent} onChange={setMaxConcurrent} min={1} max={20} /></SettingRow>
-                  <SettingRow label="Max connections per file"><NumberInput value={maxConnections} onChange={setMaxConnections} min={1} max={32} /></SettingRow>
-                </div>
-              </GlassCard>
-              <GlassCard>
-                <SectionHeader label="Download Schedule" />
-                <SettingRow label="Enable scheduling" desc="Limit speed by time"><Toggle checked={scheduleEnabled} onChange={setScheduleEnabled} /></SettingRow>
-                {scheduleEnabled && (
-                  <div className="mt-3">
-                    <div className="grid grid-cols-7 gap-1">
-                      {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day, dIdx) => (
-                        <div key={day} className="text-center">
-                          <p className="text-[9px] text-white/20 mb-1 font-mono">{day}</p>
-                          {['00-04','04-08','08-12','12-16','16-20','20-24'].map((block, bIdx) => (
-                            <button key={block} onClick={() => handleScheduleToggle(dIdx, bIdx)} title={`${day} ${block}`}
-                              className={`w-full h-5 rounded-sm mb-0.5 text-[7px] font-mono transition-colors ${scheduleGrid[dIdx][bIdx] ? 'bg-accent-blue/30 hover:bg-accent-blue/50' : 'bg-white/[0.02] hover:bg-white/[0.05]'}`}>{block}</button>
-                          ))}
-                        </div>
-                      ))}
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_rgba(10,132,255,0.06)]">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="Speed Limiter" />
+                <SettingRow label="Enable speed limit" desc="Cap global download speed"><Toggle checked={speedLimitEnabled} onChange={setSpeedLimitEnabled} /></SettingRow>
+                {speedLimitEnabled && (
+                  <div className="mt-4 pl-3 border-l border-accent-blue/15 space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between"><span className="text-xs text-white/40">Download limit</span><span className="font-mono text-xs text-white/60">{downloadSpeed} MB/s</span></div>
+                      <input type="range" min={1} max={100} value={downloadSpeed} onChange={e => setDownloadSpeed(Number(e.target.value))} className="w-full accent-accent-blue h-1 bg-white/[0.06] rounded-full appearance-none cursor-pointer" />
                     </div>
                   </div>
                 )}
-              </GlassCard>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Connections" />
+                  <div className="space-y-3">
+                    <SettingRow label="Max concurrent downloads"><NumberInput value={maxConcurrent} onChange={setMaxConcurrent} min={1} max={20} /></SettingRow>
+                    <SettingRow label="Max connections per file"><NumberInput value={maxConnections} onChange={setMaxConnections} min={1} max={32} /></SettingRow>
+                  </div>
+                </div>
+              </div>
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Download Schedule" />
+                  <SettingRow label="Enable scheduling" desc="Limit speed by time"><Toggle checked={scheduleEnabled} onChange={setScheduleEnabled} /></SettingRow>
+                  {scheduleEnabled && (
+                    <div className="mt-3">
+                      <div className="grid grid-cols-7 gap-1">
+                        {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day, dIdx) => (
+                          <div key={day} className="text-center">
+                            <p className="text-[9px] text-white/20 mb-1 font-mono">{day}</p>
+                            {['00-04','04-08','08-12','12-16','16-20','20-24'].map((block, bIdx) => (
+                              <button key={block} onClick={() => handleScheduleToggle(dIdx, bIdx)} title={`${day} ${block}`}
+                                className={`w-full h-5 rounded-sm mb-0.5 text-[7px] font-mono transition-colors ${scheduleGrid[dIdx][bIdx] ? 'bg-accent-blue/30 hover:bg-accent-blue/50' : 'bg-white/[0.02] hover:bg-white/[0.05]'}`}>{block}</button>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -406,38 +444,50 @@ export default function Settings() {
         return (
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-1"><Shield size={18} className="text-accent-blue" /><h2 className="font-display font-semibold text-lg text-white/90">Network & Privacy</h2></div>
-            <GlassCard glow className={torEnabled ? '!border-violet-500/15' : ''}>
-              <SectionHeader label="Tor Network" />
-              <SettingRow label="Route downloads through Tor" desc="Anonymous download routing"><Toggle checked={torEnabled} onChange={toggleTorFromContext} /></SettingRow>
-              {torEnabled && (
-                <div className="mt-3 pl-3 border-l border-violet-500/15 space-y-3">
-                  <div className="flex items-center gap-2"><Shield size={13} className="text-violet-400" /><span className="text-xs font-medium text-violet-400">Tor Connected</span><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /></div>
-                  <div className="bg-amber-500/[0.04] border border-amber-500/15 rounded-lg p-3 flex items-start gap-2"><AlertTriangle size={13} className="text-amber-400/70 shrink-0 mt-0.5" /><p className="text-xs text-amber-400/60">Tor may reduce download speeds. Use for privacy-sensitive downloads only.</p></div>
-                </div>
-              )}
-            </GlassCard>
-            <GlassCard>
-              <SectionHeader label="Proxy" />
-              <SettingRow label="Use proxy server" desc="Route connections through proxy"><Toggle checked={proxyEnabled} onChange={setProxyEnabled} /></SettingRow>
-              {proxyEnabled && (
-                <div className="mt-3 space-y-3 pl-3 border-l border-white/[0.04]">
-                  <div className="flex gap-2">
-                    <Select value={proxyType} onChange={setProxyType} options={['HTTP', 'HTTPS', 'SOCKS5', 'SOCKS4']} />
-                    <input type="text" placeholder="Host" value={proxyHost} onChange={e => setProxyHost(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30" />
-                    <input type="text" placeholder="Port" value={proxyPort} onChange={e => setProxyPort(e.target.value)} className="w-16 bg-white/[0.04] border border-white/[0.06] rounded-lg px-2 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30 font-mono" />
+            <div className={`group relative rounded-xl overflow-hidden transition-all duration-300 ${torEnabled ? '!border-violet-500/15' : ''} hover:shadow-[0_0_30px_rgba(10,132,255,0.06)]`}>
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="Tor Network" />
+                <SettingRow label="Route downloads through Tor" desc="Anonymous download routing"><Toggle checked={torEnabled} onChange={toggleTorFromContext} /></SettingRow>
+                {torEnabled && (
+                  <div className="mt-3 pl-3 border-l border-violet-500/15 space-y-3">
+                    <div className="flex items-center gap-2"><Shield size={13} className="text-violet-400" /><span className="text-xs font-medium text-violet-400">Tor Connected</span><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /></div>
+                    <div className="bg-amber-500/[0.04] border border-amber-500/15 rounded-lg p-3 flex items-start gap-2"><AlertTriangle size={13} className="text-amber-400/70 shrink-0 mt-0.5" /><p className="text-xs text-amber-400/60">Tor may reduce download speeds. Use for privacy-sensitive downloads only.</p></div>
                   </div>
-                  <SettingRow label="Authentication"><Toggle checked={proxyAuth} onChange={setProxyAuth} /></SettingRow>
-                  {proxyAuth && <div className="flex gap-2"><input type="text" placeholder="Username" value={proxyUser} onChange={e => setProxyUser(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30" /><input type="password" placeholder="Password" value={proxyPass} onChange={e => setProxyPass(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30" /></div>}
-                </div>
-              )}
-            </GlassCard>
-            <GlassCard>
-              <SectionHeader label="User Agent" />
-              <div className="flex gap-2">
-                <input type="text" value={userAgent} onChange={e => setUserAgent(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-xs outline-none text-white/60 focus:border-accent-blue/30 font-mono" />
-                <button className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/40 hover:text-white/80 transition-colors text-xs">Reset</button>
+                )}
               </div>
-            </GlassCard>
+            </div>
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="Proxy" />
+                <SettingRow label="Use proxy server" desc="Route connections through proxy"><Toggle checked={proxyEnabled} onChange={setProxyEnabled} /></SettingRow>
+                {proxyEnabled && (
+                  <div className="mt-3 space-y-3 pl-3 border-l border-white/[0.04]">
+                    <div className="flex gap-2">
+                      <Select value={proxyType} onChange={setProxyType} options={['HTTP', 'HTTPS', 'SOCKS5', 'SOCKS4']} />
+                      <input type="text" placeholder="Host" value={proxyHost} onChange={e => setProxyHost(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30" />
+                      <input type="text" placeholder="Port" value={proxyPort} onChange={e => setProxyPort(e.target.value)} className="w-16 bg-white/[0.04] border border-white/[0.06] rounded-lg px-2 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30 font-mono" />
+                    </div>
+                    <SettingRow label="Authentication"><Toggle checked={proxyAuth} onChange={setProxyAuth} /></SettingRow>
+                    {proxyAuth && <div className="flex gap-2"><input type="text" placeholder="Username" value={proxyUser} onChange={e => setProxyUser(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30" /><input type="password" placeholder="Password" value={proxyPass} onChange={e => setProxyPass(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs outline-none text-white/60 focus:border-accent-blue/30" /></div>}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="User Agent" />
+                <div className="flex gap-2">
+                  <input type="text" value={userAgent} onChange={e => setUserAgent(e.target.value)} className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-xs outline-none text-white/60 focus:border-accent-blue/30 font-mono" />
+                  <button className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/40 hover:text-white/80 transition-colors text-xs">Reset</button>
+                </div>
+              </div>
+            </div>
           </div>
         );
 
@@ -446,33 +496,45 @@ export default function Settings() {
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-1"><PlaySquare size={18} className="text-accent-red" /><h2 className="font-display font-semibold text-lg text-white/90">YouTube</h2></div>
             <div className="grid grid-cols-2 gap-4">
-              <GlassCard>
-                <SectionHeader label="Video Defaults" />
-                <div className="space-y-3">
-                  <SettingRow label="Default quality"><Select value={ytDefaultQuality} onChange={setYtDefaultQuality} options={['Best Available', '4K', '1080p', '720p', '480p', '360p']} /></SettingRow>
-                  <SettingRow label="Default format"><Select value={ytDefaultFormat} onChange={setYtDefaultFormat} options={['MP4', 'WEBM', 'MKV']} /></SettingRow>
-                </div>
-              </GlassCard>
-              <GlassCard>
-                <SectionHeader label="Audio Defaults" />
-                <div className="space-y-3">
-                  <SettingRow label="Audio format"><Select value={ytAudioFormat} onChange={setYtAudioFormat} options={['MP3', 'FLAC', 'AAC', 'WAV', 'M4A']} /></SettingRow>
-                  <div className="space-y-2 pt-1">
-                    <div className="flex justify-between"><span className="text-xs text-white/40">Bitrate</span><span className="font-mono text-xs text-white/60">{ytAudioBitrate} kbps</span></div>
-                    <input type="range" min={64} max={320} step={32} value={ytAudioBitrate} onChange={e => setYtAudioBitrate(Number(e.target.value))} className="w-full accent-accent-blue h-1 bg-white/[0.06] rounded-full appearance-none cursor-pointer" />
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Video Defaults" />
+                  <div className="space-y-3">
+                    <SettingRow label="Default quality"><Select value={ytDefaultQuality} onChange={setYtDefaultQuality} options={['Best Available', '4K', '1080p', '720p', '480p', '360p']} /></SettingRow>
+                    <SettingRow label="Default format"><Select value={ytDefaultFormat} onChange={setYtDefaultFormat} options={['MP4', 'WEBM', 'MKV']} /></SettingRow>
                   </div>
                 </div>
-              </GlassCard>
-            </div>
-            <GlassCard>
-              <SectionHeader label="Download Options" />
-              <div className="grid grid-cols-3 gap-3">
-                <SettingRow label="Download subtitles" desc="Include .srt file"><Toggle checked={ytSubtitles} onChange={setYtSubtitles} /></SettingRow>
-                <SettingRow label="Download playlists" desc="All videos in playlist"><Toggle checked={ytPlaylist} onChange={setYtPlaylist} /></SettingRow>
-                <SettingRow label="Embed thumbnail" desc="As cover art"><Toggle checked={ytThumbnail} onChange={setYtThumbnail} /></SettingRow>
-                <SettingRow label="Embed metadata" desc="Title, artist, album"><Toggle checked={ytMetadata} onChange={setYtMetadata} /></SettingRow>
               </div>
-            </GlassCard>
+              <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+                <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                <div className="relative p-5">
+                  <SectionHeader label="Audio Defaults" />
+                  <div className="space-y-3">
+                    <SettingRow label="Audio format"><Select value={ytAudioFormat} onChange={setYtAudioFormat} options={['MP3', 'FLAC', 'AAC', 'WAV', 'M4A']} /></SettingRow>
+                    <div className="space-y-2 pt-1">
+                      <div className="flex justify-between"><span className="text-xs text-white/40">Bitrate</span><span className="font-mono text-xs text-white/60">{ytAudioBitrate} kbps</span></div>
+                      <input type="range" min={64} max={320} step={32} value={ytAudioBitrate} onChange={e => setYtAudioBitrate(Number(e.target.value))} className="w-full accent-accent-blue h-1 bg-white/[0.06] rounded-full appearance-none cursor-pointer" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <SectionHeader label="Download Options" />
+                <div className="grid grid-cols-3 gap-3">
+                  <SettingRow label="Download subtitles" desc="Include .srt file"><Toggle checked={ytSubtitles} onChange={setYtSubtitles} /></SettingRow>
+                  <SettingRow label="Download playlists" desc="All videos in playlist"><Toggle checked={ytPlaylist} onChange={setYtPlaylist} /></SettingRow>
+                  <SettingRow label="Embed thumbnail" desc="As cover art"><Toggle checked={ytThumbnail} onChange={setYtThumbnail} /></SettingRow>
+                  <SettingRow label="Embed metadata" desc="Title, artist, album"><Toggle checked={ytMetadata} onChange={setYtMetadata} /></SettingRow>
+                </div>
+              </div>
+            </div>
           </div>
         );
 
@@ -483,26 +545,30 @@ export default function Settings() {
               <div className="flex items-center gap-3"><Keyboard size={18} className="text-accent-blue" /><h2 className="font-display font-semibold text-lg text-white/90">Keyboard Shortcuts</h2></div>
               <button onClick={resetShortcuts} className="text-xs bg-white/[0.04] border border-white/[0.06] text-white/40 hover:text-white/80 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"><RotateCcw size={11} /> Reset</button>
             </div>
-            <GlassCard>
-              <div className="space-y-0.5">
-                {shortcuts.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-white/[0.02] last:border-0">
-                    <span className="text-[13px] text-white/70">{s.action}</span>
-                    <div className="flex items-center gap-2">
-                      {editingIdx === i ? (
-                        <div className="flex items-center gap-2">
-                          <input type="text" value={tempKey} readOnly placeholder="Press keys..." className="bg-accent-blue/10 border border-accent-blue/30 rounded-lg px-3 py-1 font-mono text-xs text-white/80 w-32 text-center animate-pulse outline-none" />
-                          <button onClick={saveShortcut} className="text-[10px] bg-accent-blue text-white px-2.5 py-1 rounded-md">Save</button>
-                          <button onClick={cancelShortcut} className="text-[10px] text-white/30 hover:text-white/60 px-1">Cancel</button>
-                        </div>
-                      ) : (
-                        <><kbd className="bg-white/[0.04] border border-white/[0.06] rounded-md px-2.5 py-1 font-mono text-[11px] text-white/35">{s.key}</kbd><button onClick={() => { setEditingIdx(i); setTempKey(s.key); }} className="text-[10px] text-white/25 hover:text-accent-blue transition-colors px-1">Edit</button></>
-                      )}
+            <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+              <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <div className="relative p-5">
+                <div className="space-y-0.5">
+                  {shortcuts.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 border-b border-white/[0.02] last:border-0">
+                      <span className="text-[13px] text-white/70">{s.action}</span>
+                      <div className="flex items-center gap-2">
+                        {editingIdx === i ? (
+                          <div className="flex items-center gap-2">
+                            <input type="text" value={tempKey} readOnly placeholder="Press keys..." className="bg-accent-blue/10 border border-accent-blue/30 rounded-lg px-3 py-1 font-mono text-xs text-white/80 w-32 text-center animate-pulse outline-none" />
+                            <button onClick={saveShortcut} className="text-[10px] bg-accent-blue text-white px-2.5 py-1 rounded-md">Save</button>
+                            <button onClick={cancelShortcut} className="text-[10px] text-white/30 hover:text-white/60 px-1">Cancel</button>
+                          </div>
+                        ) : (
+                          <><kbd className="bg-white/[0.04] border border-white/[0.06] rounded-md px-2.5 py-1 font-mono text-[11px] text-white/35">{s.key}</kbd><button onClick={() => { setEditingIdx(i); setTempKey(s.key); }} className="text-[10px] text-white/25 hover:text-accent-blue transition-colors px-1">Edit</button></>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </GlassCard>
+            </div>
           </div>
         );
 
@@ -565,67 +631,83 @@ export default function Settings() {
 
       {/* Right sidebar */}
       <aside className="w-[200px] shrink-0 py-6 px-3 space-y-3 relative">
-        <GlassCard>
-          <SectionHeader label="Status" />
-          <div className="space-y-2.5">
-            {[
-              { label: 'Active', value: '3', color: '#0A84FF' },
-              { label: 'Completed', value: '12', color: '#32D74B' },
-              { label: 'Queued', value: '2', color: '#FF9500' },
-              { label: 'Failed', value: '1', color: '#FF3B30' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <span className="text-[11px] text-white/40">{s.label}</span>
-                <span className="font-mono text-[11px] font-medium" style={{ color: s.color }}>{s.value}</span>
-              </div>
-            ))}
+        <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+          <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+          <div className="relative p-5">
+            <SectionHeader label="Status" />
+            <div className="space-y-2.5">
+              {[
+                { label: 'Active', value: '3', color: '#0A84FF' },
+                { label: 'Completed', value: '12', color: '#32D74B' },
+                { label: 'Queued', value: '2', color: '#FF9500' },
+                { label: 'Failed', value: '1', color: '#FF3B30' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-[11px] text-white/40">{s.label}</span>
+                  <span className="font-mono text-[11px] font-medium" style={{ color: s.color }}>{s.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </GlassCard>
+        </div>
 
-        <GlassCard>
-          <SectionHeader label="Connection" />
-          <div className="space-y-2">
-            {[
-              { label: 'Tor', value: torEnabled ? 'On' : 'Off', active: torEnabled, color: '#AF52DE' },
-              { label: 'Proxy', value: proxyEnabled ? 'On' : 'Off', active: proxyEnabled, color: '#FF9500' },
-              { label: 'Speed Limit', value: speedLimitEnabled ? 'On' : 'Off', active: speedLimitEnabled, color: '#0A84FF' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <span className="text-[11px] text-white/40">{s.label}</span>
-                <span className="font-mono text-[11px]" style={{ color: s.active ? s.color : '#5A5A63' }}>{s.value}</span>
-              </div>
-            ))}
+        <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+          <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+          <div className="relative p-5">
+            <SectionHeader label="Connection" />
+            <div className="space-y-2">
+              {[
+                { label: 'Tor', value: torEnabled ? 'On' : 'Off', active: torEnabled, color: '#AF52DE' },
+                { label: 'Proxy', value: proxyEnabled ? 'On' : 'Off', active: proxyEnabled, color: '#FF9500' },
+                { label: 'Speed Limit', value: speedLimitEnabled ? 'On' : 'Off', active: speedLimitEnabled, color: '#0A84FF' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-[11px] text-white/40">{s.label}</span>
+                  <span className="font-mono text-[11px]" style={{ color: s.active ? s.color : '#5A5A63' }}>{s.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </GlassCard>
+        </div>
 
-        <GlassCard>
-          <SectionHeader label="Preferences" />
-          <div className="space-y-2">
-            {[
-              { label: 'Auto-start', value: autoStart ? 'On' : 'Off' },
-              { label: 'Clipboard', value: clipboardMonitor ? 'On' : 'Off' },
-              { label: 'History', value: keepHistory ? `${historyDays}d` : 'Off' },
-              { label: 'Theme', value: theme === 'light' ? 'Light' : 'Dark' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <span className="text-[11px] text-white/40">{s.label}</span>
-                <span className="font-mono text-[11px] text-white/50">{s.value}</span>
-              </div>
-            ))}
+        <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+          <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+          <div className="relative p-5">
+            <SectionHeader label="Preferences" />
+            <div className="space-y-2">
+              {[
+                { label: 'Auto-start', value: autoStart ? 'On' : 'Off' },
+                { label: 'Clipboard', value: clipboardMonitor ? 'On' : 'Off' },
+                { label: 'History', value: keepHistory ? `${historyDays}d` : 'Off' },
+                { label: 'Theme', value: theme === 'light' ? 'Light' : 'Dark' },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-[11px] text-white/40">{s.label}</span>
+                  <span className="font-mono text-[11px] text-white/50">{s.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </GlassCard>
+        </div>
 
-        <GlassCard>
-          <SectionHeader label="Accent" />
-          <div className="flex gap-2">
-            {accentColors.map(c => (
-              <button key={c.value} onClick={() => setAccentColor(c.value)}
-                className={`w-6 h-6 rounded-full transition-all duration-200 ${accentColor === c.value ? 'scale-110' : 'opacity-40 hover:opacity-80 hover:scale-105'}`}
-                style={{ backgroundColor: c.value, boxShadow: accentColor === c.value ? `0 0 12px ${c.value}40, inset 0 0 0 1.5px rgba(255,255,255,0.15)` : 'none' }}
-                title={c.name} />
-            ))}
+        <div className="group relative rounded-xl overflow-hidden transition-all duration-300">
+          <div className="absolute inset-0 bg-[#0a0a0a]/55 backdrop-blur-md rounded-xl border border-white/[0.04] group-hover:border-white/[0.07] transition-colors" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+          <div className="relative p-5">
+            <SectionHeader label="Accent" />
+            <div className="flex gap-2">
+              {accentColors.map(c => (
+                <button key={c.value} onClick={() => setAccentColor(c.value)}
+                  className={`w-6 h-6 rounded-full transition-all duration-200 ${accentColor === c.value ? 'scale-110' : 'opacity-40 hover:opacity-80 hover:scale-105'}`}
+                  style={{ backgroundColor: c.value, boxShadow: accentColor === c.value ? `0 0 12px ${c.value}40, inset 0 0 0 1.5px rgba(255,255,255,0.15)` : 'none' }}
+                  title={c.name} />
+              ))}
+            </div>
           </div>
-        </GlassCard>
+        </div>
 
         <div className="relative rounded-lg overflow-hidden">
           <div className="absolute inset-0 bg-red-500/[0.03] rounded-lg border border-red-500/[0.06]" />

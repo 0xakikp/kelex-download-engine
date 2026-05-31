@@ -1,3 +1,5 @@
 .dockerignore
 dist/
 node_modules/
+release/
+*.AppImage

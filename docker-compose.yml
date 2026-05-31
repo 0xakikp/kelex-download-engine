@@ -1,61 +1,60 @@
 # ============================================================
-# Kelex Downloader - Docker Compose
-#
-# Quick Start:
-#   docker-compose up -d
-#
-# Build from source:
-#   docker-compose up -d --build
-#
-# Stop:
-#   docker-compose down
-#
-# View logs:
-#   docker-compose logs -f
-#
-# Update:
-#   docker-compose pull && docker-compose up -d
+# Kelex Download Engine v2.0 — Docker Compose
+# Services: backend (Fastify + yt-dlp + aria2 + ffmpeg) + nginx frontend
 # ============================================================
 
 version: '3.8'
 
 services:
-  kelex:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: kelex/backend:latest
+    container_name: kelex-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - kelex-downloads:/opt/kelex-downloads
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - HOST=0.0.0.0
+      - DOWNLOAD_DIR=/opt/kelex-downloads
+      - MAX_CONCURRENT=5
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "app.name=kelex-backend"
+      - "app.version=2.0.0"
+
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    image: kelex/downloader:latest
-    container_name: kelex-downloader
+    image: kelex/frontend:latest
+    container_name: kelex-frontend
     restart: unless-stopped
-    
-    # Port mapping - change host port if 3000 is taken
     ports:
-      - "3001:80"
-    
-    # Optional: Persist download directory
-    # volumes:
-    #   - ./downloads:/downloads
-    
-    # Resource limits (optional)
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 512M
-    #       cpus: '1.0'
-    
-    # Health check
+      - "3004:80"
+    depends_on:
+      - backend
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 5s
-    
-    # Environment
-    environment:
-      - NODE_ENV=production
-    
-    # Labels for organization
     labels:
-      - "app.name=kelex-downloader"
+      - "app.name=kelex-frontend"
       - "app.version=2.0.0"
+
+volumes:
+  kelex-downloads:
+    driver: local
