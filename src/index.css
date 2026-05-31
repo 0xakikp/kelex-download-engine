@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark theme (default) */
+    --bg-primary: #050505;
+    --bg-secondary: #0A0A0A;
+    --bg-tertiary: #111111;
+    --bg-hover: #1A1A1A;
+    --border-subtle: #1E1E1E;
+    --border-default: #2A2A2A;
+    --text-primary: #FFFFFF;
+    --text-secondary: #8A8A93;
+    --text-tertiary: #5A5A63;
+    --text-inverse: #050505;
+
+    --accent-red: #FF3B30;
+    --accent-amber: #FF9500;
+    --accent-violet: #AF52DE;
+    --accent-blue: #0A84FF;
+    --accent-cyan: #32D74B;
+    --accent-orange: #FF6B35;
+
+    --status-downloading: #0A84FF;
+    --status-paused: #FF9500;
+    --status-completed: #32D74B;
+    --status-error: #FF3B30;
+    --status-converting: #FF6B35;
+    --status-queued: #8A8A93;
+    --status-seeding: #AF52DE;
+
+    --radius: 10px;
+  }
+
+  .light {
+    /* Light theme overrides */
+    --bg-primary: #F5F5F7;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #E8E8ED;
+    --bg-hover: #E2E2E6;
+    --border-subtle: #D2D2D7;
+    --border-default: #C2C2C7;
+    --text-primary: #1D1D1F;
+    --text-secondary: #6E6E73;
+    --text-tertiary: #8E8E93;
+    --text-inverse: #F5F5F7;
+
+    --accent-red: #FF3B30;
+    --accent-amber: #FF9500;
+    --accent-violet: #AF52DE;
+    --accent-blue: #0071EB;
+    --accent-cyan: #30B94D;
+    --accent-orange: #E5602A;
+
+    --status-downloading: #0071EB;
+    --status-paused: #FF9500;
+    --status-completed: #30B94D;
+    --status-error: #FF3B30;
+    --status-converting: #E5602A;
+    --status-queued: #8E8E93;
+    --status-seeding: #AF52DE;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+  /* Custom Checkbox Base */
+  input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  input[type="checkbox"]:hover {
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+  }
+  input[type="checkbox"]:checked {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+  }
+  input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 5px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+  }
+  input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 1px;
+  }
+  input[type="checkbox"]:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Light theme checkbox overrides */
+  .light input[type="checkbox"] {
+    border-color: rgba(0,0,0,0.15);
+    background: rgba(0,0,0,0.03);
+  }
+  .light input[type="checkbox"]:hover {
+    border-color: rgba(0,0,0,0.25);
+    background: rgba(0,0,0,0.06);
+  }
+}
+
+@layer utilities {
+  .glow-blue { box-shadow: 0 0 60px -10px rgba(10,132,255,0.15); }
+  .glow-amber { box-shadow: 0 0 60px -10px rgba(255,149,0,0.12); }
+  .glow-violet { box-shadow: 0 0 60px -10px rgba(175,82,222,0.15); }
+  .glow-red { box-shadow: 0 0 60px -10px rgba(255,59,48,0.12); }
+  .shimmer-bg {
+    background: linear-gradient(90deg, transparent 0%, rgba(128,128,128,0.08) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+  .text-gradient {
+    background: linear-gradient(90deg, #0A84FF, #AF52DE, #FF6B35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

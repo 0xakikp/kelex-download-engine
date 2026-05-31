@@ -1,0 +1,107 @@
+{
+  "appId": "com.kelex.downloader",
+  "productName": "Kelex Downloader",
+  "copyright": "Copyright (c) 2025 Kelex",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "public/",
+      "to": "public/",
+      "filter": ["**/*"]
+    }
+  ],
+  "publish": {
+    "provider": "github",
+    "owner": "kelex",
+    "repo": "downloader",
+    "releaseType": "release"
+  },
+  "mac": {
+    "category": "public.app-category.utilities",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "icon": "public/logo-kelex.png",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist"
+  },
+  "dmg": {
+    "title": "Kelex Downloader",
+    "artifactName": "Kelex-Downloader-${version}-${arch}.${ext}",
+    "contents": [
+      {
+        "x": 130,
+        "y": 220
+      },
+      {
+        "x": 410,
+        "y": 220,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ],
+    "window": {
+      "width": 540,
+      "height": 380
+    }
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "public/logo-kelex.png",
+    "publisherName": "Kelex Inc.",
+    "verifyUpdateCodeSignature": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Kelex Downloader",
+    "artifactName": "Kelex-Downloader-Setup-${version}.${ext}",
+    "include": "build/nsis-installer.nsh"
+  },
+  "portable": {
+    "artifactName": "Kelex-Downloader-Portable-${version}.${ext}"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      }
+    ],
+    "category": "Network",
+    "icon": "public/logo-kelex.png"
+  },
+  "afterSign": "build/notarize.js"
+}
