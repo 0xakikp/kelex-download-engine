@@ -66,7 +66,7 @@ function PeerNetworkCanvas() {
       const cx = w / 2, cy = h / 2;
       ctx.beginPath();
       ctx.arc(cx, cy, 16, 0, Math.PI * 2);
-      ctx.fillStyle = '#0A84FF';
+      ctx.fillStyle = 'var(--accent-blue)';
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.font = '10px Inter';
@@ -147,7 +147,7 @@ function TorrentCard({ torrent, index }: { torrent: typeof mockTorrents[0]; inde
           </div>
         </div>
         <div className="flex flex-col gap-2 shrink-0">
-          <button className="bg-accent-violet hover:bg-purple-500 text-white text-xs font-medium px-4 py-2 rounded-md flex items-center gap-1.5 transition-colors">
+          <button className="bg-accent-violet hover:opacity-90 text-white text-xs font-medium px-4 py-2 rounded-md flex items-center gap-1.5 transition-colors">
             <Download size={14} /> DOWNLOAD
           </button>
           <button className="p-2 rounded-md hover:bg-bg-hover text-text-secondary transition-colors self-center">
@@ -221,13 +221,13 @@ export default function Torrents() {
       </AnimatePresence>
 
       {/* Hero */}
-      <section className="relative py-10 px-6 text-center" style={{ background: 'linear-gradient(180deg, #0F0818 0%, #050505 100%)' }}>
+      <section className="relative py-10 px-6 text-center" style={{ background: 'linear-gradient(180deg, #0F0818 0%, var(--bg-primary) 100%)' }}>
         <div className="absolute w-[400px] h-[400px] rounded-full opacity-[0.025] bg-accent-violet" style={{ filter: 'blur(100px)', top: '10%', left: '50%', transform: 'translateX(-50%)' }} />
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] }}>
           <Network size={56} className="text-accent-violet mx-auto mb-4" />
         </motion.div>
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
-          className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-white mb-2">Torrent Engine</motion.h1>
+          className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-text-primary mb-2">Torrent Engine</motion.h1>
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}
           className="text-text-secondary text-lg max-w-[520px] mx-auto">Search millions of torrents. Download via magnet links. Track every peer.</motion.p>
 
@@ -239,7 +239,7 @@ export default function Torrents() {
             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search torrents by name..."
               className="bg-transparent flex-1 text-text-primary placeholder:text-text-tertiary outline-none text-sm" />
-            <button onClick={handleSearch} className="bg-accent-violet hover:bg-purple-500 text-white font-medium px-5 h-10 rounded-full text-sm transition-colors">SEARCH</button>
+            <button onClick={handleSearch} className="bg-accent-violet hover:opacity-90 text-white font-medium px-5 h-10 rounded-full text-sm transition-colors">SEARCH</button>
           </div>
           <span className="text-[10px] text-text-tertiary font-mono">OR</span>
           <div className="flex-1 flex items-center gap-2 bg-bg-tertiary border border-border-default rounded-full px-5 h-[52px] focus-within:border-accent-violet transition-all">
@@ -247,7 +247,7 @@ export default function Torrents() {
             <input type="text" value={magnetLink} onChange={e => setMagnetLink(e.target.value)}
               placeholder="Paste magnet link..."
               className="bg-transparent flex-1 text-text-primary placeholder:text-text-tertiary outline-none text-sm" />
-            <button onClick={addMagnet} className="bg-accent-violet hover:bg-purple-500 text-white font-medium px-5 h-10 rounded-full text-sm transition-colors">ADD</button>
+            <button onClick={addMagnet} className="bg-accent-violet hover:opacity-90 text-white font-medium px-5 h-10 rounded-full text-sm transition-colors">ADD</button>
           </div>
         </motion.div>
 

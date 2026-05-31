@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Copy, Check, ChevronDown, ChevronRight, Lock, Unlock, Send } from 'lucide-react';
 
 const methodColors: Record<string, { bg: string; text: string }> = {
-  GET: { bg: 'rgba(50,215,75,0.15)', text: '#32D74B' },
-  POST: { bg: 'rgba(10,132,255,0.15)', text: '#0A84FF' },
-  DELETE: { bg: 'rgba(255,59,48,0.15)', text: '#FF3B30' },
-  PATCH: { bg: 'rgba(255,149,0,0.15)', text: '#FF9500' },
+  GET: { bg: 'rgba(50,215,75,0.15)', text: 'var(--accent-cyan)' },
+  POST: { bg: 'rgba(10,132,255,0.15)', text: 'var(--accent-blue)' },
+  DELETE: { bg: 'rgba(255,59,48,0.15)', text: 'var(--accent-red)' },
+  PATCH: { bg: 'rgba(255,149,0,0.15)', text: 'var(--accent-amber)' },
 };
 
 const endpoints = [

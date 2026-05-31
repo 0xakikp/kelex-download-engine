@@ -9,6 +9,7 @@ import Converter from './pages/Converter';
 import Extension from './pages/Extension';
 import Settings from './pages/Settings';
 import ApiDocs from './pages/ApiDocs';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/extension" element={<Extension />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/api-docs" element={<ApiDocs />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
       </HashRouter>

@@ -8,7 +8,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary transition-colors duration-300">
+    <div className="min-h-screen overflow-x-hidden">
       <TopBar />
       <Navbar />
       <main className="pt-[104px]">

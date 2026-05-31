@@ -71,10 +71,10 @@ function FeatureCard({ icon: Icon, title, desc, link, color, delay }: any) {
 /* ─── Download row ─── */
 function DownloadRow({ d, onPause, onResume, onCancel }: any) {
   const statusColors: Record<string, string> = {
-    downloading: '#0A84FF', paused: '#FF9500', queued: '#8A8A93',
-    completed: '#32D74B', error: '#FF3B30', converting: '#FF6B35', seeding: '#AF52DE',
+    downloading: 'var(--status-downloading)', paused: 'var(--status-paused)', queued: 'var(--status-queued)',
+    completed: 'var(--status-completed)', error: 'var(--status-error)', converting: 'var(--status-converting)', seeding: 'var(--status-seeding)',
   };
-  const color = statusColors[d.status] || '#8A8A93';
+  const color = statusColors[d.status] || 'var(--status-queued)';
   const isActive = d.status === 'downloading';
 
   const typeIcons: Record<string, any> = { http: Download, youtube: PlaySquare, torrent: Network, magnet: Network, convert: AudioLines };
@@ -97,7 +97,7 @@ function DownloadRow({ d, onPause, onResume, onCancel }: any) {
             className={`h-full rounded-full ${isActive ? 'shimmer-bg' : ''}`}
             style={{
               width: `${d.progress}%`,
-              background: isActive ? 'linear-gradient(90deg, #0A84FF, #32D74B)' : color,
+              background: isActive ? 'linear-gradient(90deg, var(--status-downloading), var(--status-completed))' : color,
               transition: 'width 0.3s ease-out'
             }}
           />
@@ -139,17 +139,17 @@ export default function Home() {
     : urlInput.startsWith('http') ? 'http' : null;
 
   const featureRows = [
-    { icon: Globe, title: 'HTTP \u00B7 HTTPS \u00B7 FTP \u00B7 Magnet \u00B7 Torrent', desc: 'Download from any URL. Support for all protocols including BitTorrent with DHT, PEX, and magnet link handling.', color: '#0A84FF' },
-    { icon: PlaySquare, title: 'YouTube Search & Full Format Support', desc: 'Search YouTube directly. Download in any resolution from 144p to 4K. Extract audio as MP3, FLAC, AAC, or WAV.', color: '#FF3B30' },
-    { icon: Network, title: 'Built-in Torrent Search & P2P', desc: 'Search across torrent indexes. Track seeders, leechers, and peers in real-time. DHT and PEX support for maximum connectivity.', color: '#AF52DE' },
-    { icon: Shield, title: 'Tor Routing \u00B7 Proxy Support \u00B7 Scheduling', desc: 'Route downloads through Tor for anonymity. Configure SOCKS5/HTTP proxies. Schedule bandwidth limits by time of day.', color: '#32D74B' },
+    { icon: Globe, title: 'HTTP \u00B7 HTTPS \u00B7 FTP \u00B7 Magnet \u00B7 Torrent', desc: 'Download from any URL. Support for all protocols including BitTorrent with DHT, PEX, and magnet link handling.', color: 'var(--accent-blue)' },
+    { icon: PlaySquare, title: 'YouTube Search & Full Format Support', desc: 'Search YouTube directly. Download in any resolution from 144p to 4K. Extract audio as MP3, FLAC, AAC, or WAV.', color: 'var(--accent-red)' },
+    { icon: Network, title: 'Built-in Torrent Search & P2P', desc: 'Search across torrent indexes. Track seeders, leechers, and peers in real-time. DHT and PEX support for maximum connectivity.', color: 'var(--accent-violet)' },
+    { icon: Shield, title: 'Tor Routing \u00B7 Proxy Support \u00B7 Scheduling', desc: 'Route downloads through Tor for anonymity. Configure SOCKS5/HTTP proxies. Schedule bandwidth limits by time of day.', color: 'var(--accent-cyan)' },
   ];
 
   return (
     <div className="min-h-screen">
       {/* ── Hero ── */}
       <section className="relative min-h-[70vh] flex flex-col items-center justify-center px-6 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #050505 0%, #0A0A0A 50%, #0F0F1A 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, #0F0F1A 100%)' }}>
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'url(/hero-bg-pattern.png)', backgroundSize: 'cover' }} />
         <div className="absolute w-[500px] h-[500px] rounded-full opacity-[0.03] bg-accent-blue animate-drift" style={{ filter: 'blur(120px)', top: '20%', left: '30%' }} />
 
@@ -157,7 +157,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-          className="font-display font-bold text-[clamp(3rem,8vw,7rem)] tracking-[-0.04em] text-white relative z-10"
+          className="font-display font-bold text-[clamp(3rem,8vw,7rem)] tracking-[-0.04em] text-text-primary relative z-10"
         >
           KEL<span className="text-accent-blue">E</span><span className="text-accent-blue">X</span>
         </motion.h1>
@@ -203,7 +203,7 @@ export default function Home() {
                 {urlType}
               </span>
             )}
-            <button className="bg-accent-blue hover:bg-blue-600 text-white font-medium px-6 h-12 rounded-full transition-all hover:scale-[1.02] shrink-0 text-sm">
+            <button className="bg-accent-blue hover:opacity-90 text-white font-medium px-6 h-12 rounded-full transition-all hover:scale-[1.02] shrink-0 text-sm">
               DOWNLOAD
             </button>
           </div>
@@ -211,10 +211,10 @@ export default function Home() {
 
         {/* Stats */}
         <div className="relative z-10 mt-12 grid grid-cols-4 gap-4 max-w-[700px] w-full">
-          <StatCard icon={Download} label="Active" value={activeCount} color="#0A84FF" delay={0.5} />
-          <StatCard icon={Zap} label="Speed" value={`${totalSpeed.toFixed(1)} MB/s`} color="#FF9500" delay={0.6} />
-          <StatCard icon={CheckCircle} label="Completed" value={completedToday} color="#32D74B" delay={0.7} />
-          <StatCard icon={Shield} label={`Tor: ${torEnabled ? 'ON' : 'OFF'}`} value={torEnabled ? 'Active' : 'Off'} color={torEnabled ? '#AF52DE' : '#5A5A63'} delay={0.8} />
+          <StatCard icon={Download} label="Active" value={activeCount} color="var(--status-downloading)" delay={0.5} />
+          <StatCard icon={Zap} label="Speed" value={`${totalSpeed.toFixed(1)} MB/s`} color="var(--accent-amber)" delay={0.6} />
+          <StatCard icon={CheckCircle} label="Completed" value={completedToday} color="var(--status-completed)" delay={0.7} />
+          <StatCard icon={Shield} label={`Tor: ${torEnabled ? 'ON' : 'OFF'}`} value={torEnabled ? 'Active' : 'Off'} color={torEnabled ? 'var(--accent-violet)' : 'var(--text-tertiary)'} delay={0.8} />
         </div>
       </section>
 
@@ -224,12 +224,12 @@ export default function Home() {
           <p className="font-mono text-xs text-accent-blue tracking-[0.1em] mb-6">QUICK ACCESS</p>
         </FadeIn>
         <div className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
-          <FeatureCard icon={PlaySquare} title="YouTube" desc="Search, preview & download videos in any format. Convert to MP3/FLAC." link="/youtube" color="#FF3B30" delay={0.08} />
-          <FeatureCard icon={Network} title="Torrents" desc="Search torrents, download via magnet links. Track peers, seeders & leechers." link="/torrents" color="#AF52DE" delay={0.16} />
-          <FeatureCard icon={AudioLines} title="Convert" desc="Extract audio from video. Convert to MP3, FLAC, AAC, WAV with quality control." link="/converter" color="#FF6B35" delay={0.24} />
-          <FeatureCard icon={Download} title="Downloads" desc="Full queue management, priorities, scheduling, speed limits & bandwidth control." link="/downloads" color="#0A84FF" delay={0.32} />
-          <FeatureCard icon={Puzzle} title="Extension" desc="One-click downloads from any site. Cookie support for protected content." link="/extension" color="#FF9500" delay={0.40} />
-          <FeatureCard icon={Code} title="API" desc="Programmatic access. Integrate Kelex into your workflows & applications." link="/api-docs" color="#32D74B" delay={0.48} />
+          <FeatureCard icon={PlaySquare} title="YouTube" desc="Search, preview & download videos in any format. Convert to MP3/FLAC." link="/youtube" color="var(--accent-red)" delay={0.08} />
+          <FeatureCard icon={Network} title="Torrents" desc="Search torrents, download via magnet links. Track peers, seeders & leechers." link="/torrents" color="var(--accent-violet)" delay={0.16} />
+          <FeatureCard icon={AudioLines} title="Convert" desc="Extract audio from video. Convert to MP3, FLAC, AAC, WAV with quality control." link="/converter" color="var(--accent-orange)" delay={0.24} />
+          <FeatureCard icon={Download} title="Downloads" desc="Full queue management, priorities, scheduling, speed limits & bandwidth control." link="/downloads" color="var(--accent-blue)" delay={0.32} />
+          <FeatureCard icon={Puzzle} title="Extension" desc="One-click downloads from any site. Cookie support for protected content." link="/extension" color="var(--accent-amber)" delay={0.40} />
+          <FeatureCard icon={Code} title="API" desc="Programmatic access. Integrate Kelex into your workflows & applications." link="/api-docs" color="var(--accent-cyan)" delay={0.48} />
         </div>
       </section>
 
@@ -281,19 +281,19 @@ export default function Home() {
                 <AreaChart data={speedData}>
                   <defs>
                     <linearGradient id="speedGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0A84FF" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#0A84FF" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--accent-blue)" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="var(--accent-blue)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E1E1E" vertical={false} />
-                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#5A5A63' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: '#5A5A63' }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                  <XAxis dataKey="time" tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: '6px', fontSize: '12px', fontFamily: 'JetBrains Mono' }}
-                    itemStyle={{ color: '#0A84FF' }}
-                    labelStyle={{ color: '#5A5A63' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', fontFamily: 'JetBrains Mono' }}
+                    itemStyle={{ color: 'var(--accent-blue)' }}
+                    labelStyle={{ color: 'var(--text-tertiary)' }}
                   />
-                  <Area type="monotone" dataKey="speed" stroke="#0A84FF" strokeWidth={2} fill="url(#speedGrad)" />
+                  <Area type="monotone" dataKey="speed" stroke="var(--accent-blue)" strokeWidth={2} fill="url(#speedGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -303,10 +303,10 @@ export default function Home() {
             <div className="bg-bg-secondary border border-border-subtle rounded-lg p-6">
               <p className="font-mono text-[10px] text-text-tertiary tracking-[0.05em] mb-4">USAGE BY TYPE</p>
               {[
-                { label: 'HTTP Downloads', value: 45, color: '#0A84FF' },
-                { label: 'YouTube', value: 30, color: '#FF3B30' },
-                { label: 'Torrents', value: 15, color: '#AF52DE' },
-                { label: 'Conversions', value: 10, color: '#FF6B35' },
+                { label: 'HTTP Downloads', value: 45, color: 'var(--accent-blue)' },
+                { label: 'YouTube', value: 30, color: 'var(--accent-red)' },
+                { label: 'Torrents', value: 15, color: 'var(--accent-violet)' },
+                { label: 'Conversions', value: 10, color: 'var(--accent-orange)' },
               ].map(bar => (
                 <div key={bar.label} className="mb-3">
                   <div className="flex justify-between text-xs mb-1">
@@ -356,16 +356,16 @@ export default function Home() {
       </section>
 
       {/* ── Footer CTA ── */}
-      <section className="relative py-20 text-center" style={{ backgroundColor: '#080808' }}>
-        <div className="h-0.5 w-full absolute top-0 left-0" style={{ background: 'linear-gradient(90deg, #0A84FF, #AF52DE, #FF6B35)' }} />
+      <section className="relative py-20 text-center" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+        <div className="h-0.5 w-full absolute top-0 left-0" style={{ background: 'linear-gradient(90deg, var(--accent-blue), var(--accent-violet), var(--accent-orange))' }} />
         <FadeIn>
-          <h2 className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-white mb-4">Ready to Download?</h2>
+          <h2 className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-text-primary mb-4">Ready to Download?</h2>
         </FadeIn>
         <FadeIn delay={0.15}>
           <p className="text-text-secondary text-lg max-w-[500px] mx-auto mb-8">Paste any URL above and experience the fastest download manager.</p>
         </FadeIn>
         <FadeIn delay={0.3}>
-          <button className="bg-accent-blue hover:bg-blue-600 text-white font-medium h-[52px] px-8 rounded-full transition-all hover:scale-[1.02] text-sm">
+          <button className="bg-accent-blue hover:opacity-90 text-white font-medium h-[52px] px-8 rounded-full transition-all hover:scale-[1.02] text-sm">
             START DOWNLOADING
           </button>
         </FadeIn>

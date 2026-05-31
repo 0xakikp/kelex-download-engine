@@ -57,13 +57,13 @@ export default function YouTube() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative py-10 px-6 text-center" style={{ background: 'linear-gradient(180deg, #0F0505 0%, #050505 100%)' }}>
+      <section className="relative py-10 px-6 text-center" style={{ background: 'linear-gradient(180deg, #0F0505 0%, var(--bg-primary) 100%)' }}>
         <div className="absolute w-[400px] h-[400px] rounded-full opacity-[0.02] bg-accent-red" style={{ filter: 'blur(100px)', top: '10%', left: '50%', transform: 'translateX(-50%)' }} />
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] }}>
           <PlaySquare size={56} className="text-accent-red mx-auto mb-4" />
         </motion.div>
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-          className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-white mb-2">YouTube Downloader</motion.h1>
+          className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-text-primary mb-2">YouTube Downloader</motion.h1>
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}
           className="text-text-secondary text-lg max-w-[520px] mx-auto">Search, preview & download any video. Extract audio in studio quality.</motion.p>
 
@@ -74,7 +74,7 @@ export default function YouTube() {
             <input type="text" value={query} onChange={e => setQuery(e.target.value)}
               placeholder="Search YouTube or paste a video URL..."
               className="bg-transparent flex-1 text-text-primary placeholder:text-text-tertiary outline-none text-sm" />
-            <button className="bg-accent-red hover:bg-red-500 text-white font-medium px-5 h-11 rounded-full text-sm transition-colors">
+            <button className="bg-accent-red hover:opacity-90 text-white font-medium px-5 h-11 rounded-full text-sm transition-colors">
               SEARCH
             </button>
           </div>
@@ -99,9 +99,9 @@ export default function YouTube() {
                 className="group cursor-pointer" onClick={() => setSelectedVideo(video)}>
                 <div className="relative aspect-video rounded-lg overflow-hidden bg-bg-secondary">
                   <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 group-hover:brightness-110 transition-all duration-300" />
-                  <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-mono px-1.5 py-0.5 rounded">{video.duration}</span>
+                  <span className="absolute bottom-2 right-2 bg-black/80 text-text-primary text-[10px] font-mono px-1.5 py-0.5 rounded">{video.duration}</span>
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button className="bg-accent-red text-white text-xs font-medium px-4 py-2 rounded-md flex items-center gap-2">
+                    <button className="bg-accent-red hover:opacity-90 text-white text-xs font-medium px-4 py-2 rounded-md flex items-center gap-2">
                       <Download size={14} /> Download
                     </button>
                   </div>
@@ -128,7 +128,7 @@ export default function YouTube() {
                   <div className="relative aspect-video rounded-lg overflow-hidden bg-bg-primary mb-4">
                     <img src={selectedVideo.thumbnail} alt="" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-accent-red flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 rounded-full bg-accent-red flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity">
                         <PlaySquare size={28} className="text-white ml-1" />
                       </div>
                     </div>
@@ -200,7 +200,7 @@ export default function YouTube() {
 
                   <div className="flex gap-2 mt-6">
                     <button onClick={() => addToQueue(selectedVideo)}
-                      className="flex-1 bg-accent-blue hover:bg-blue-600 text-white h-12 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">
+                      className="flex-1 bg-accent-blue hover:opacity-90 text-white h-12 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">
                       <Download size={16} /> DOWNLOAD
                     </button>
                     <button onClick={() => addToQueue(selectedVideo)}

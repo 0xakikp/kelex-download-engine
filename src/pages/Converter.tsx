@@ -114,7 +114,7 @@ export default function Converter() {
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
               className="border-2 border-dashed border-accent-orange rounded-2xl p-16 text-center" style={{ animation: 'pulse 1.5s infinite' }}>
               <Upload size={96} className="text-accent-orange mx-auto mb-4" />
-              <h2 className="text-2xl font-display font-semibold text-white mb-2">Drop video files here</h2>
+              <h2 className="text-2xl font-display font-semibold text-text-primary mb-2">Drop video files here</h2>
               <p className="text-text-secondary">Supports MP4, MKV, AVI, WEBM, MOV</p>
             </motion.div>
           </motion.div>
@@ -122,22 +122,22 @@ export default function Converter() {
       </AnimatePresence>
 
       {/* Hero */}
-      <section className="relative py-10 px-6 text-center" style={{ background: 'linear-gradient(180deg, #0F0805 0%, #050505 100%)' }}>
+      <section className="relative py-10 px-6 text-center" style={{ background: 'linear-gradient(180deg, #0F0805 0%, var(--bg-primary) 100%)' }}>
         <div className="absolute w-[400px] h-[400px] rounded-full opacity-[0.025] bg-accent-orange" style={{ filter: 'blur(100px)', top: '10%', left: '50%', transform: 'translateX(-50%)' }} />
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] as [number, number, number, number] }}>
           <AudioLines size={56} className="text-accent-orange mx-auto mb-4" />
         </motion.div>
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
-          className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-white mb-2">Media Converter</motion.h1>
+          className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-text-primary mb-2">Media Converter</motion.h1>
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}
           className="text-text-secondary text-lg max-w-[520px] mx-auto">Extract studio-quality audio from any video. MP3, FLAC, AAC, WAV, M4A.</motion.p>
 
         {/* Source Selection */}
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3, duration: 0.4 }}
           className="max-w-[640px] mx-auto mt-8 grid grid-cols-3 gap-3">
-          <SourceCard icon={HardDriveDownload} title="From Downloads" desc="Select a downloaded video" color="#0A84FF" selected={selectedSource === 'download'} onClick={() => selectSource('download')} />
-          <SourceCard icon={Upload} title="Upload File" desc="Drag & drop or browse" color="#32D74B" selected={selectedSource === 'upload'} onClick={() => { fileInputRef.current?.click(); setSelectedSource('upload'); }} />
-          <SourceCard icon={PlaySquare} title="From YouTube" desc="Paste a YouTube URL" color="#FF3B30" selected={selectedSource === 'youtube'} onClick={() => selectSource('youtube')} />
+          <SourceCard icon={HardDriveDownload} title="From Downloads" desc="Select a downloaded video" color="var(--accent-blue)" selected={selectedSource === 'download'} onClick={() => selectSource('download')} />
+          <SourceCard icon={Upload} title="Upload File" desc="Drag & drop or browse" color="var(--accent-cyan)" selected={selectedSource === 'upload'} onClick={() => { fileInputRef.current?.click(); setSelectedSource('upload'); }} />
+          <SourceCard icon={PlaySquare} title="From YouTube" desc="Paste a YouTube URL" color="var(--accent-red)" selected={selectedSource === 'youtube'} onClick={() => selectSource('youtube')} />
         </motion.div>
         <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={e => { if (e.target.files?.[0]) setSourceFile(e.target.files[0].name); }} />
       </section>
@@ -191,7 +191,7 @@ export default function Converter() {
             <div className="mt-5 flex items-center gap-3">
               <button onClick={() => setEmbedMetadata(!embedMetadata)}
                 className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${embedMetadata ? 'bg-accent-orange' : 'border border-border-default'}`}>
-                {embedMetadata && <Check size={14} className="text-white" />}
+                {embedMetadata && <Check size={14} className="text-text-primary" />}
               </button>
               <span className="text-sm text-text-secondary">Embed metadata (title, artist, thumbnail)</span>
             </div>
@@ -221,7 +221,7 @@ export default function Converter() {
 
             {/* Convert Button */}
             <button onClick={startConversion}
-              className="w-full mt-8 bg-accent-orange hover:bg-orange-500 text-white h-[52px] rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:scale-[1.01]">
+            className="w-full mt-8 bg-accent-orange hover:opacity-90 text-white h-[52px] rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:scale-[1.01]">
               <Wand2 size={18} /> CONVERT
             </button>
           </div>
@@ -255,7 +255,7 @@ export default function Converter() {
                       <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
                         i < job.stage ? 'bg-accent-blue' : i === job.stage ? 'bg-accent-orange' : 'bg-border-subtle'
                       }`}>
-                        {i < job.stage ? <Check size={10} className="text-white" /> : <div className={`w-1.5 h-1.5 rounded-full ${i === job.stage ? 'bg-white animate-pulse' : 'bg-text-tertiary'}`} />}
+                        {i < job.stage ? <Check size={10} className="text-text-primary" /> : <div className={`w-1.5 h-1.5 rounded-full ${i === job.stage ? 'bg-text-primary animate-pulse' : 'bg-text-tertiary'}`} />}
                       </div>
                       <span className={`text-[10px] ${i <= job.stage ? 'text-text-primary' : 'text-text-tertiary'}`}>{s}</span>
                     </div>
@@ -294,7 +294,7 @@ export default function Converter() {
             </thead>
             <tbody>
               {formatGuide.map(row => (
-                <tr key={row.format} className="border-b border-[#111] hover:bg-bg-hover transition-colors">
+                <tr key={row.format} className="border-b border-border-subtle hover:bg-bg-hover transition-colors">
                   <td className="py-3 pr-4 font-mono text-accent-orange">{row.format}</td>
                   <td className="py-3 pr-4">
                     <div className="flex gap-0.5">

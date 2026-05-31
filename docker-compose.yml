@@ -30,7 +30,7 @@ services:
     
     # Port mapping - change host port if 3000 is taken
     ports:
-      - "3000:80"
+      - "3001:80"
     
     # Optional: Persist download directory
     # volumes:

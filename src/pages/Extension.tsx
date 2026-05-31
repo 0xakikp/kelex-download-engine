@@ -13,9 +13,9 @@ const browsers = [
 ];
 
 const features = [
-  { icon: ScanEye, title: 'Auto-Detect Media', desc: 'The extension automatically scans every webpage for downloadable videos, audio files, and media. A floating download button appears on any video player.', color: '#0A84FF' },
-  { icon: Cookie, title: 'Authenticated Downloads', desc: 'Sites that require login? No problem. The extension forwards your browser cookies to Kelex, enabling downloads from protected content.', color: '#FF9500' },
-  { icon: MousePointerClick, title: 'Floating Controls', desc: 'A sleek, non-intrusive download button appears on every video player. Customizable position, auto-hide when not needed.', color: '#32D74B' },
+  { icon: ScanEye, title: 'Auto-Detect Media', desc: 'The extension automatically scans every webpage for downloadable videos, audio files, and media. A floating download button appears on any video player.', color: 'var(--accent-blue)' },
+  { icon: Cookie, title: 'Authenticated Downloads', desc: 'Sites that require login? No problem. The extension forwards your browser cookies to Kelex, enabling downloads from protected content.', color: 'var(--accent-amber)' },
+  { icon: MousePointerClick, title: 'Floating Controls', desc: 'A sleek, non-intrusive download button appears on every video player. Customizable position, auto-hide when not needed.', color: 'var(--accent-cyan)' },
 ];
 
 const steps = [
@@ -60,7 +60,7 @@ export default function Extension() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative min-h-[50vh] flex flex-col items-center justify-center px-6 text-center"
-        style={{ background: 'linear-gradient(135deg, #050505 0%, #0A0A0A 50%, #0F0F0A 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, #0F0F0A 100%)' }}>
         <div className="absolute w-[400px] h-[400px] rounded-full opacity-[0.03] bg-accent-amber animate-drift" style={{ filter: 'blur(100px)', top: '20%', left: '50%', transform: 'translateX(-50%)' }} />
         <div className="relative">
           <div className="absolute inset-0 rounded-full border border-dashed border-accent-amber/20 animate-[spin_20s_linear_infinite]" style={{ width: 80, height: 80, top: -12, left: -12 }} />
@@ -70,7 +70,7 @@ export default function Extension() {
           <span className="font-mono text-[10px] px-3 py-1 rounded-full bg-accent-amber/15 text-accent-amber tracking-[0.05em] mb-5 inline-block">BROWSER TOOL</span>
         </FadeIn>
         <FadeIn delay={0.1}>
-          <h1 className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-white mb-3">One-Click <span className="text-accent-amber">Downloads</span></h1>
+          <h1 className="font-display font-bold text-[clamp(2rem,5vw,4rem)] text-text-primary mb-3">One-Click <span className="text-accent-amber">Downloads</span></h1>
         </FadeIn>
         <FadeIn delay={0.2}>
           <p className="text-text-secondary text-lg max-w-[560px] mx-auto mb-10">The Kelex extension adds download superpowers to your browser. Grab videos, media, and files from any site.</p>
@@ -81,7 +81,7 @@ export default function Extension() {
               <motion.button key={b.name} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
                 className="flex items-center gap-3 bg-bg-hover border border-border-default hover:border-accent-amber/40 h-[52px] px-6 rounded-full transition-all hover:-translate-y-0.5">
                 <b.icon size={20} style={{ color: b.color }} />
-                <span className="text-sm text-white">Add to {b.name}</span>
+                <span className="text-sm text-text-primary">Add to {b.name}</span>
               </motion.button>
             ))}
           </div>
@@ -153,7 +153,7 @@ export default function Extension() {
                   <h3 className="font-medium text-text-primary">{b.name}</h3>
                   <p className="text-xs text-text-tertiary font-mono">Version {b.version} &middot; {b.size}</p>
                 </div>
-                <button className="bg-accent-blue hover:bg-blue-600 text-white text-sm font-medium px-5 h-9 rounded-md transition-colors">
+                <button className="bg-accent-blue hover:opacity-90 text-white text-sm font-medium px-5 h-9 rounded-md transition-colors">
                   Install
                 </button>
               </div>
