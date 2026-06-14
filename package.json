@@ -27,11 +27,7 @@
     "electron:build-win": "npm run build && electron-builder --win --publish=never",
     "electron:build-linux": "npm run build && electron-builder --linux --publish=never",
     "electron:build-all": "npm run build && electron-builder --mac --win --linux --publish=never",
-    "electron:pack": "npm run build && electron-builder --dir",
-    "docker:build": "docker build -t kelex/downloader:latest .",
-    "docker:compose": "docker compose -f docker-compose.yml up -d",
-    "docker:compose-build": "docker compose -f docker-compose.yml up -d --build",
-    "docker:stop": "docker compose -f docker-compose.yml down"
+    "electron:pack": "npm run build && electron-builder --dir"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -118,35 +114,33 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "backend/dist/**/*",
+      "backend/package.json",
+      "backend/node_modules/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": ["dist/**/*", "node_modules/**/*", "package.json"]
+      }
     ],
     "mac": {
       "category": "public.app-category.utilities",
       "target": [
-        {
-          "target": "dmg",
-          "arch": ["x64", "arm64"]
-        },
-        {
-          "target": "zip",
-          "arch": ["x64", "arm64"]
-        }
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
       ]
     },
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
+        { "target": "nsis", "arch": ["x64"] }
       ]
     },
     "linux": {
       "target": [
-        {
-          "target": "AppImage",
-          "arch": ["x64"]
-        }
+        { "target": "AppImage", "arch": ["x64"] }
       ]
     },
     "publish": {

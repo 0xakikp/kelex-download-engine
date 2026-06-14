@@ -192,14 +192,29 @@ export default function Torrents() {
   const [searched, setSearched] = useState(false);
   const [activeTorrents, setActiveTorrents] = useState<typeof mockTorrents>([]);
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) setSearched(true);
+  const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001/api/v1' : '/api/v1');
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearched(true);
+    // Backend search not implemented yet - show mock results
   };
 
-  const addMagnet = () => {
-    if (magnetLink.startsWith('magnet:')) {
-      const mockTorrent = mockTorrents[Math.floor(Math.random() * mockTorrents.length)];
-      setActiveTorrents(prev => [...prev, { ...mockTorrent, id: `active_${Date.now()}` }]);
+  const addMagnet = async () => {
+    if (!magnetLink.startsWith('magnet:')) return;
+    try {
+      const res = await fetch(`${API_BASE}/torrents/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ magnet: magnetLink }),
+      });
+      if (!res.ok) throw new Error('Failed to add magnet');
+      const data = await res.json();
+      setActiveTorrents(prev => [...prev, { ...mockTorrents[0], id: data.id || `active_${Date.now()}` }]);
+      setMagnetLink('');
+    } catch {
+      // Fallback: add to local state only
+      setActiveTorrents(prev => [...prev, { ...mockTorrents[0], id: `active_${Date.now()}` }]);
       setMagnetLink('');
     }
   };

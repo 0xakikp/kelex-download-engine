@@ -36,9 +36,9 @@ const faqs = [
 ];
 
 const screenshots = [
-  { src: '/extension-screenshot-1.png', caption: 'Floating download button on video players' },
-  { src: '/extension-screenshot-2.png', caption: 'Extension popup with detected media list' },
-  { src: '/extension-screenshot-1.png', caption: 'Cookie management and configuration' },
+  { src: '', caption: 'Floating download button on video players' },
+  { src: '', caption: 'Extension popup with detected media list' },
+  { src: '', caption: 'Cookie management and configuration' },
 ];
 
 function FadeIn({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -79,7 +79,9 @@ export default function Extension() {
           <div className="flex gap-4 flex-wrap justify-center">
             {browsers.map((b, i) => (
               <motion.button key={b.name} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
-                className="flex items-center gap-3 bg-bg-hover border border-border-default hover:border-accent-amber/40 h-[52px] px-6 rounded-full transition-all hover:-translate-y-0.5">
+                className="flex items-center gap-3 bg-bg-hover border border-border-default hover:border-accent-amber/40 h-[52px] px-6 rounded-full transition-all hover:-translate-y-0.5"
+                onClick={() => alert('Browser extension coming soon. For now, use the web app or paste URLs directly.')}
+                title="Coming soon">
                 <b.icon size={20} style={{ color: b.color }} />
                 <span className="text-sm text-text-primary">Add to {b.name}</span>
               </motion.button>
@@ -176,8 +178,15 @@ export default function Extension() {
             <FadeIn key={i} delay={i * 0.1}>
               <div className="bg-bg-secondary border border-border-subtle rounded-lg overflow-hidden group cursor-pointer hover:-translate-y-1 transition-all"
                 onClick={() => setLightboxImg(s.src)}>
-                <div className="aspect-[16/10] overflow-hidden">
-                  <img src={s.src} alt={s.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <div className="aspect-[16/10] overflow-hidden bg-bg-tertiary flex items-center justify-center">
+                  {s.src ? (
+                    <img src={s.src} alt={s.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  ) : (
+                    <div className="text-center">
+                      <Puzzle size={48} className="text-text-tertiary mx-auto mb-2" />
+                      <p className="text-xs text-text-tertiary">Screenshot coming soon</p>
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-text-secondary p-3">{s.caption}</p>
               </div>

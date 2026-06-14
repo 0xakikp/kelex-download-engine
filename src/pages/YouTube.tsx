@@ -4,8 +4,9 @@ import {
   PlaySquare, Search, Download, X, Check, Music, Video,
   Film, Headphones
 } from 'lucide-react';
+import { useDownloads } from '@/context/DownloadContext';
 
-const mockVideos = [
+const defaultMockVideos = [
   { id: '1', title: 'The Beauty of Mathematics - A Visual Journey', channel: 'Veritasium', views: '4.2M', duration: '14:32', thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=640&h=360&fit=crop', date: '2 weeks ago' },
   { id: '2', title: 'Linux Terminal Tutorial - From Beginner to Pro', channel: 'ThePrimeagen', views: '1.8M', duration: '28:45', thumbnail: 'https://images.unsplash.com/photo-1629654297299-c8506221ca97?w=640&h=360&fit=crop', date: '3 days ago' },
   { id: '3', title: 'Lofi Hip Hop Radio - Beats to Relax/Study to', channel: 'Lofi Girl', views: '12M', duration: 'Live', thumbnail: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=640&h=360&fit=crop', date: 'Streaming' },
@@ -37,17 +38,57 @@ const tags = ['Trending', 'Music', '4K', 'Podcasts', 'Tutorials', 'Gaming', 'Liv
 
 export default function YouTube() {
   const [query, setQuery] = useState('');
-  const [searched] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState<typeof mockVideos[0] | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [tab, setTab] = useState<'video' | 'audio'>('video');
   const [selectedQuality, setSelectedQuality] = useState('1080p');
   const [videoFormat, setVideoFormat] = useState('MP4');
   const [audioFormat, setAudioFormat] = useState('MP3');
   const [bitrate, setBitrate] = useState(192);
   const [queue, setQueue] = useState<any[]>([]);
+  const [mockVideos, setMockVideos] = useState<any[]>(defaultMockVideos);
   
-  const addToQueue = (video: typeof mockVideos[0]) => {
-    setQueue(prev => [...prev, { ...video, status: 'queued', progress: 0, format: tab === 'video' ? videoFormat : audioFormat, quality: tab === 'video' ? selectedQuality : `${bitrate}kbps` }]);
+  const { addDownload } = useDownloads();
+
+  const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001/api/v1' : '/api/v1');
+
+  const doSearch = async () => {
+    if (!query.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/youtube/info?url=${encodeURIComponent(query.trim())}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      if (data.id || data.title) {
+        // Real result from backend - use it instead of mock
+        const realVideo = {
+          id: data.id,
+          title: data.title || 'Unknown',
+          channel: data.uploader || 'Unknown',
+          views: data.view_count ? String(data.view_count) : 'N/A',
+          duration: data.duration ? `${Math.floor(data.duration / 60)}:${(data.duration % 60).toString().padStart(2, '0')}` : 'N/A',
+          thumbnail: data.thumbnail || `https://img.youtube.com/vi/${data.id}/mqdefault.jpg`,
+          date: 'Just now',
+        };
+        setMockVideos([realVideo, ...mockVideos.slice(1)]);
+      }
+      setSearched(true);
+    } catch {
+      setSearched(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') doSearch();
+  };
+
+  const addToQueue = (video: any) => {
+    const item = { ...video, status: 'queued', progress: 0, format: tab === 'video' ? videoFormat : audioFormat, quality: tab === 'video' ? selectedQuality : `${bitrate}kbps` };
+    setQueue(prev => [...prev, item]);
+    // Also add to backend if it's a real YouTube result
+    if (video.id && video.id.length === 11) {
+      const url = `https://www.youtube.com/watch?v=${video.id}`;
+      addDownload({ url, type: 'youtube', format: tab === 'video' ? videoFormat.toLowerCase() : audioFormat.toLowerCase(), quality: selectedQuality });
+    }
   };
 
   const removeFromQueue = (id: string) => {
@@ -71,10 +112,10 @@ export default function YouTube() {
           className="max-w-[640px] mx-auto mt-8">
           <div className="flex items-center gap-2 bg-bg-tertiary border border-border-default rounded-full px-5 h-14 focus-within:border-accent-red transition-all">
             <Search size={18} className="text-text-tertiary" />
-            <input type="text" value={query} onChange={e => setQuery(e.target.value)}
+            <input type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown}
               placeholder="Search YouTube or paste a video URL..."
               className="bg-transparent flex-1 text-text-primary placeholder:text-text-tertiary outline-none text-sm" />
-            <button className="bg-accent-red hover:opacity-90 text-white font-medium px-5 h-11 rounded-full text-sm transition-colors">
+            <button onClick={doSearch} className="bg-accent-red hover:opacity-90 text-white font-medium px-5 h-11 rounded-full text-sm transition-colors">
               SEARCH
             </button>
           </div>

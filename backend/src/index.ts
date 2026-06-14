@@ -10,6 +10,7 @@ import { youtubeRoutes } from './routes/youtube.js';
 import { torrentRoutes } from './routes/torrents.js';
 import { convertRoutes } from './routes/converter.js';
 import { systemRoutes } from './routes/system.js';
+import { fileRoutes } from './routes/files.js';
 import { wsHandler } from './websocket/progress.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,7 @@ await app.register(youtubeRoutes, { prefix: '/api/v1/youtube' });
 await app.register(torrentRoutes, { prefix: '/api/v1/torrents' });
 await app.register(convertRoutes, { prefix: '/api/v1/convert' });
 await app.register(systemRoutes, { prefix: '/api/v1' });
+await app.register(fileRoutes, { prefix: '/api/v1/files' });
 
 // Health check
 app.get('/health', async () => ({ status: 'ok', version: '2.0.0' }));

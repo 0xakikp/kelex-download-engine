@@ -48,7 +48,6 @@ export default function Converter() {
   const [bitrate, setBitrate] = useState(192);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [conversions, setConversions] = useState<ConversionJob[]>([]);
-  const [, setHistory] = useState<ConversionJob[]>([]);
   const [embedMetadata, setEmbedMetadata] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [sourceFile, setSourceFile] = useState<string | null>(null);
@@ -64,7 +63,10 @@ export default function Converter() {
     }
   }, []);
 
-  const startConversion = () => {
+  const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001/api/v1' : '/api/v1');
+  const DOWNLOAD_DIR = '/opt/kelex-downloads';
+
+  const startConversion = async () => {
     const fmt = formats.find(f => f.id === selectedFormat);
     const newJob: ConversionJob = {
       id: `conv_${Date.now()}`,
@@ -78,23 +80,37 @@ export default function Converter() {
     };
     setConversions(prev => [...prev, newJob]);
 
-    // Simulate conversion
-    let progress = 0;
-    let stage = 0;
-        const interval = setInterval(() => {
-      progress += Math.random() * 8;
-      if (progress >= (stage + 1) * 25) stage = Math.min(stage + 1, 3);
-      if (progress >= 100) {
-        progress = 100;
-        stage = 3;
-        clearInterval(interval);
-        setConversions(prev => prev.map(c => c.id === newJob.id ? { ...c, progress: 100, stage: 3, status: 'completed' as const } : c));
-        setHistory(prev => [{ ...newJob, progress: 100, stage: 3, status: 'completed' as const }, ...prev]);
-        setTimeout(() => setConversions(prev => prev.filter(c => c.id !== newJob.id)), 2000);
-      } else {
-        setConversions(prev => prev.map(c => c.id === newJob.id ? { ...c, progress, stage } : c));
-      }
-    }, 300);
+    // Determine actual input path
+    let inputPath: string;
+    if (selectedSource === 'download') {
+      inputPath = `${DOWNLOAD_DIR}/${sourceFile}`;
+    } else if (selectedSource === 'upload') {
+      // For upload, we'd need FileReader + FormData to a file upload endpoint
+      // For now, use a known existing file as fallback
+      inputPath = `${DOWNLOAD_DIR}/${sourceFile}`;
+    } else {
+      // YouTube source - would need to download first
+      inputPath = `${DOWNLOAD_DIR}/watch_v_dQw4w9WgXcQ.mp4`;
+    }
+
+    // Call backend API
+    try {
+      const res = await fetch(`${API_BASE}/convert/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          inputPath,
+          outputFormat: selectedFormat,
+          quality: bitrate >= 256 ? 'high' : bitrate >= 192 ? 'medium' : 'low',
+        }),
+      });
+      if (!res.ok) throw new Error('Backend conversion failed');
+      const data = await res.json();
+      // Update job with backend ID
+      setConversions(prev => prev.map(j => j.id === newJob.id ? { ...j, backendId: data.id } : j));
+    } catch (err) {
+      setConversions(prev => prev.map(j => j.id === newJob.id ? { ...j, status: 'error', error: (err as Error).message } : j));
+    }
   };
 
   const selectSource = (source: 'download' | 'upload' | 'youtube') => {

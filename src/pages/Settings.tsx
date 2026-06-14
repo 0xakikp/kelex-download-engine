@@ -164,6 +164,75 @@ export default function Settings() {
   // Reset modal
   const [showReset, setShowReset] = useState(false);
 
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('kelex-settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.fontSize) setFontSize(parsed.fontSize);
+        if (parsed.animations !== undefined) setAnimations(parsed.animations);
+        if (parsed.downloadFolder) setDownloadFolder(parsed.downloadFolder);
+        if (parsed.afterDownload) setAfterDownload(parsed.afterDownload);
+        if (parsed.language) setLanguage(parsed.language);
+        if (parsed.autoStart !== undefined) setAutoStart(parsed.autoStart);
+        if (parsed.autoRetry !== undefined) setAutoRetry(parsed.autoRetry);
+        if (parsed.maxRetries) setMaxRetries(parsed.maxRetries);
+        if (parsed.clipboardMonitor !== undefined) setClipboardMonitor(parsed.clipboardMonitor);
+        if (parsed.keepHistory !== undefined) setKeepHistory(parsed.keepHistory);
+        if (parsed.historyDays) setHistoryDays(parsed.historyDays);
+        if (parsed.showCompleteDialog !== undefined) setShowCompleteDialog(parsed.showCompleteDialog);
+        if (parsed.startNextOnFinish !== undefined) setStartNextOnFinish(parsed.startNextOnFinish);
+        if (parsed.categoriesEnabled !== undefined) setCategoriesEnabled(parsed.categoriesEnabled);
+        if (parsed.autoRemoveDeleted !== undefined) setAutoRemoveDeleted(parsed.autoRemoveDeleted);
+        if (parsed.duplicatesCheck !== undefined) setDuplicatesCheck(parsed.duplicatesCheck);
+        if (parsed.fileTypes) setFileTypes(parsed.fileTypes);
+        if (parsed.speedLimitEnabled !== undefined) setSpeedLimitEnabled(parsed.speedLimitEnabled);
+        if (parsed.downloadSpeed) setDownloadSpeed(parsed.downloadSpeed);
+        if (parsed.maxConcurrent) setMaxConcurrent(parsed.maxConcurrent);
+        if (parsed.maxConnections) setMaxConnections(parsed.maxConnections);
+        if (parsed.proxyEnabled !== undefined) setProxyEnabled(parsed.proxyEnabled);
+        if (parsed.proxyType) setProxyType(parsed.proxyType);
+        if (parsed.proxyHost) setProxyHost(parsed.proxyHost);
+        if (parsed.proxyPort) setProxyPort(parsed.proxyPort);
+        if (parsed.proxyAuth !== undefined) setProxyAuth(parsed.proxyAuth);
+        if (parsed.proxyUser) setProxyUser(parsed.proxyUser);
+        if (parsed.userAgent) setUserAgent(parsed.userAgent);
+        if (parsed.ytDefaultQuality) setYtDefaultQuality(parsed.ytDefaultQuality);
+        if (parsed.ytDefaultFormat) setYtDefaultFormat(parsed.ytDefaultFormat);
+        if (parsed.ytAudioFormat) setYtAudioFormat(parsed.ytAudioFormat);
+        if (parsed.ytAudioBitrate) setYtAudioBitrate(parsed.ytAudioBitrate);
+        if (parsed.ytSubtitles !== undefined) setYtSubtitles(parsed.ytSubtitles);
+        if (parsed.ytPlaylist !== undefined) setYtPlaylist(parsed.ytPlaylist);
+        if (parsed.ytThumbnail !== undefined) setYtThumbnail(parsed.ytThumbnail);
+        if (parsed.ytMetadata !== undefined) setYtMetadata(parsed.ytMetadata);
+        if (parsed.shortcuts) setShortcuts(parsed.shortcuts);
+      }
+    } catch { /* ignore parse errors */ }
+  }, []);
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    const settings = {
+      fontSize, animations, downloadFolder, afterDownload, language,
+      autoStart, autoRetry, maxRetries, clipboardMonitor, keepHistory, historyDays,
+      showCompleteDialog, startNextOnFinish, categoriesEnabled, autoRemoveDeleted, duplicatesCheck, fileTypes,
+      speedLimitEnabled, downloadSpeed, maxConcurrent, maxConnections,
+      proxyEnabled, proxyType, proxyHost, proxyPort, proxyAuth, proxyUser, userAgent,
+      ytDefaultQuality, ytDefaultFormat, ytAudioFormat, ytAudioBitrate, ytSubtitles, ytPlaylist, ytThumbnail, ytMetadata,
+      shortcuts,
+    };
+    localStorage.setItem('kelex-settings', JSON.stringify(settings));
+  }, [
+    fontSize, animations, downloadFolder, afterDownload, language,
+    autoStart, autoRetry, maxRetries, clipboardMonitor, keepHistory, historyDays,
+    showCompleteDialog, startNextOnFinish, categoriesEnabled, autoRemoveDeleted, duplicatesCheck, fileTypes,
+    speedLimitEnabled, downloadSpeed, maxConcurrent, maxConnections,
+    proxyEnabled, proxyType, proxyHost, proxyPort, proxyAuth, proxyUser, userAgent,
+    ytDefaultQuality, ytDefaultFormat, ytAudioFormat, ytAudioBitrate, ytSubtitles, ytPlaylist, ytThumbnail, ytMetadata,
+    shortcuts,
+  ]);
+
   const handleScheduleToggle = (d: number, b: number) => setScheduleGrid(p => { const n = p.map(r => [...r]); n[d][b] = !n[d][b]; return n; });
 
   const handleKeyCapture = useCallback((e: KeyboardEvent) => {

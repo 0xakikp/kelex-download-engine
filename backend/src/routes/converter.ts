@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { spawn } from 'child_process';
-import { mkdir } from 'fs/promises';
+import { mkdir, access } from 'fs/promises';
 import { join, basename, extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { downloadManager } from '../services/download-manager.js';
@@ -19,6 +19,15 @@ const convertSchema = z.object({
 
 const DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || '/opt/kelex-downloads';
 
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function convertRoutes(fastify: FastifyInstance) {
   fastify.post('/', async (request, reply) => {
     const body = convertSchema.parse(request.body);
@@ -27,6 +36,7 @@ export async function convertRoutes(fastify: FastifyInstance) {
     const outputPath = join(DOWNLOAD_DIR, 'converted', outName);
     await mkdir(join(DOWNLOAD_DIR, 'converted'), { recursive: true });
 
+    // Create the download directly in the manager so it's tracked properly
     const download: Download = {
       id,
       filename: outName,
@@ -47,11 +57,9 @@ export async function convertRoutes(fastify: FastifyInstance) {
       outputPath,
     };
 
-    downloadManager.create({
-      url: body.inputPath,
-      type: 'convert',
-      filename: outName,
-    });
+    // Inject directly into downloadManager's map so it's queryable by ID
+    (downloadManager as any).injectDownload?.(download) ?? (downloadManager as any).downloads?.set(id, download);
+    broadcastProgress(download);
 
     const args = ['-i', body.inputPath];
     if (body.resolution) args.push('-vf', `scale=${body.resolution}`);
@@ -82,14 +90,15 @@ export async function convertRoutes(fastify: FastifyInstance) {
       }
     });
 
-    proc.on('close', (code) => {
-      if (code === 0) {
+    proc.on('close', async (code) => {
+      const exists = await fileExists(outputPath);
+      if (code === 0 && exists) {
         download.status = 'completed';
         download.progress = 100;
         download.completedAt = new Date().toISOString();
       } else {
         download.status = 'error';
-        download.error = `ffmpeg exited with code ${code}`;
+        download.error = exists ? `ffmpeg exited with code ${code}` : 'ffmpeg finished but output file is missing';
       }
       broadcastProgress(download);
     });

@@ -65,6 +65,25 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [accentColor, setAccentColor] = useState('#0A84FF');
   const wsRef = useRef<WebSocket | null>(null);
 
+  // Load theme and accent from localStorage
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem('kelex-theme') as 'dark' | 'light' | null;
+      const savedAccent = localStorage.getItem('kelex-accent');
+      if (savedTheme) setTheme(savedTheme);
+      if (savedAccent) setAccentColor(savedAccent);
+    } catch { /* ignore */ }
+  }, []);
+
+  // Save theme and accent to localStorage
+  useEffect(() => {
+    localStorage.setItem('kelex-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('kelex-accent', accentColor);
+  }, [accentColor]);
+
   // Theme effect
   useEffect(() => {
     const root = document.documentElement;
@@ -100,45 +119,76 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
 
   // WebSocket for real-time progress
   useEffect(() => {
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 10;
 
-    ws.onopen = () => console.log('[WS] Connected');
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'download.progress') {
-          const d = msg.data;
-          setDownloads(prev => {
-            const idx = prev.findIndex(x => x.id === d.id);
-            if (idx === -1) {
-              return [{
+    const connect = () => {
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        console.log('[WS] Max reconnect attempts reached');
+        return;
+      }
+      ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('[WS] Connected');
+        reconnectAttempts = 0;
+      };
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'download.progress') {
+            const d = msg.data;
+            setDownloads(prev => {
+              const idx = prev.findIndex(x => x.id === d.id);
+              const wasCompleted = idx !== -1 && prev[idx].status !== 'completed' && d.status === 'completed';
+              if (wasCompleted && window.electronAPI?.showNotification) {
+                window.electronAPI.showNotification('Download Complete', `${d.filename} finished downloading`);
+              }
+              if (idx === -1) {
+                return [{
+                  ...d,
+                  createdAt: new Date(d.createdAt),
+                  speedHistory: d.speedHistory || Array(60).fill(0),
+                }, ...prev];
+              }
+              const next = [...prev];
+              next[idx] = {
+                ...next[idx],
                 ...d,
                 createdAt: new Date(d.createdAt),
-                speedHistory: d.speedHistory || Array(60).fill(0),
-              }, ...prev];
-            }
-            const next = [...prev];
-            next[idx] = {
-              ...next[idx],
-              ...d,
-              createdAt: new Date(d.createdAt),
-              speedHistory: d.speedHistory || next[idx].speedHistory,
-            };
-            return next;
-          });
+                speedHistory: d.speedHistory || next[idx].speedHistory,
+              };
+              return next;
+            });
+          }
+          if (msg.type === 'stats.update') {
+            setStats(msg.data);
+          }
+        } catch (err) {
+          // ignore malformed
         }
-        if (msg.type === 'stats.update') {
-          setStats(msg.data);
-        }
-      } catch (err) {
-        // ignore malformed
-      }
+      };
+      ws.onclose = () => {
+        console.log('[WS] Disconnected');
+        wsRef.current = null;
+        reconnectAttempts++;
+        reconnectTimer = setTimeout(connect, Math.min(1000 * reconnectAttempts, 30000));
+      };
+      ws.onerror = (err) => {
+        console.error('[WS] Error', err);
+        ws?.close();
+      };
     };
-    ws.onclose = () => console.log('[WS] Disconnected');
-    ws.onerror = (err) => console.error('[WS] Error', err);
 
-    return () => ws.close();
+    connect();
+
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, []);
 
   const addDownload = useCallback(async (partial: Partial<Download>) => {
@@ -236,6 +286,62 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const toggleTor = useCallback(() => setTorEnabled(p => !p), []);
   const toggleTheme = useCallback(() => setTheme(p => p === 'dark' ? 'light' : 'dark'), []);
 
+  // Electron IPC handlers (must be after function declarations)
+  useEffect(() => {
+    if (!window.electronAPI) return;
+
+    const cleanup = window.electronAPI.onAppCommand((cmd: any) => {
+      switch (cmd.action) {
+        case 'new-download':
+          break;
+        case 'paste-url':
+          if (cmd.data) {
+            const type = cmd.data.includes('youtube') || cmd.data.includes('youtu.be') ? 'youtube'
+              : cmd.data.startsWith('magnet:') ? 'magnet'
+              : 'http';
+            addDownload({ url: cmd.data, type });
+          }
+          break;
+        case 'pause-all':
+          downloads.filter(d => d.status === 'downloading').forEach(d => pauseDownload(d.id));
+          break;
+        case 'resume-all':
+          downloads.filter(d => d.status === 'paused').forEach(d => resumeDownload(d.id));
+          break;
+        case 'start-download':
+          if (cmd.data?.url) addDownload(cmd.data);
+          break;
+        case 'deep-link':
+          if (cmd.data) {
+            const type = cmd.data.includes('youtube') || cmd.data.includes('youtu.be') ? 'youtube'
+              : cmd.data.startsWith('magnet:') ? 'magnet'
+              : 'http';
+            addDownload({ url: cmd.data, type });
+          }
+          break;
+        case 'clipboard-url':
+          if (cmd.data) {
+            const type = cmd.data.includes('youtube') || cmd.data.includes('youtu.be') ? 'youtube'
+              : cmd.data.startsWith('magnet:') ? 'magnet'
+              : 'http';
+            addDownload({ url: cmd.data, type });
+            window.electronAPI?.showNotification?.('URL Detected', `Added to queue: ${cmd.data}`);
+          }
+          break;
+        case 'open-settings':
+          window.dispatchEvent(new CustomEvent('navigate', { detail: '/settings' }));
+          break;
+        case 'navigate':
+          if (cmd.page) {
+            window.dispatchEvent(new CustomEvent('navigate', { detail: cmd.page }));
+          }
+          break;
+      }
+    });
+
+    return cleanup;
+  }, [downloads, addDownload, pauseDownload, resumeDownload]);
+
   const totalSpeed = downloads.filter(d => d.status === 'downloading').reduce((s, d) => s + d.speed, 0);
   const activeCount = downloads.filter(d => d.status === 'downloading').length;
 
@@ -255,4 +361,27 @@ export function useDownloads() {
   const ctx = useContext(DownloadContext);
   if (!ctx) throw new Error('useDownloads must be inside DownloadProvider');
   return ctx;
+}
+
+// Global type declaration for Electron API
+declare global {
+  interface Window {
+    electronAPI?: {
+      getVersion: () => Promise<string>;
+      getPlatform: () => Promise<string>;
+      isElectron: boolean;
+      selectFolder: () => Promise<string | null>;
+      openFolder: (folderPath: string) => Promise<void>;
+      showInFolder: (filePath: string) => Promise<void>;
+      showSaveDialog: (options: any) => Promise<any>;
+      showOpenDialog: (options: any) => Promise<any>;
+      showNotification: (title: string, body: string) => Promise<void>;
+      startDownload: (data: { url: string; type?: string }) => void;
+      onAppCommand: (callback: (data: any) => void) => () => void;
+      onUpdateAvailable: (callback: () => void) => () => void;
+      onUpdateDownloaded: (callback: () => void) => () => void;
+      onFilesDropped: (callback: (data: any) => void) => () => void;
+    };
+    isElectron?: boolean;
+  }
 }

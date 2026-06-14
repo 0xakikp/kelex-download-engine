@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Download as DownloadIcon, Pause, Play, Square, Search, LayoutGrid, List,
   CheckCircle, AlertCircle, Clock, Zap, ChevronDown, ChevronUp,
-  Trash2, RotateCw, Filter, PlaySquare, AudioLines
+  Trash2, RotateCw, Filter, PlaySquare, AudioLines, FolderOpen
 } from 'lucide-react';
 import { useDownloads } from '@/context/DownloadContext';
 import {
@@ -88,7 +88,7 @@ export default function Downloads() {
           { icon: Clock, label: 'Queued', value: counts.queued, color: '#8A8A93' },
           { icon: CheckCircle, label: 'Done', value: counts.completed, color: '#32D74B' },
           ...(counts.failed > 0 ? [{ icon: AlertCircle, label: 'Failed', value: counts.failed, color: '#FF3B30' }] : []),
-          { icon: Zap, label: 'Speed', value: `${totalSpeed.toFixed(1)} MB/s`, color: '#FF9500' },
+          { icon: Zap, label: 'Speed', value: totalSpeed < 1 ? `${(totalSpeed * 1024).toFixed(0)} KB/s` : `${totalSpeed.toFixed(1)} MB/s`, color: '#FF9500' },
         ].map((s, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
             className="bg-bg-primary border border-border-subtle rounded-md h-[72px] flex items-center gap-3 px-4">
@@ -207,6 +207,12 @@ export default function Downloads() {
 /* ===== COMPACT ROW - Single line with thin inline progress ===== */
 function CompactRow({ d, selected, toggleSelect, onPause, onResume, onRetry, onRemove }: any) {
   const sc = statusConfig[d.status] || statusConfig.queued;
+  const speedDisplay = d.speed < 1 ? `${(d.speed * 1024).toFixed(0)} KB/s` : `${d.speed.toFixed(1)} MB/s`;
+  const showInFolder = () => {
+    if (window.electronAPI?.showInFolder) {
+      window.electronAPI.showInFolder(`/opt/kelex-downloads/${d.filename}`);
+    }
+  };
   return (
     <div className="bg-bg-secondary hover:bg-bg-tertiary rounded-lg px-4 py-2.5 transition-all border border-transparent hover:border-border-subtle">
       {/* Top row: Icon + Filename + Status */}
@@ -226,11 +232,14 @@ function CompactRow({ d, selected, toggleSelect, onPause, onResume, onRetry, onR
         </div>
         <span className="font-mono text-[10px] text-text-tertiary shrink-0 w-8 text-right">{d.progress}%</span>
         {d.speed > 0 ? (
-          <span className="font-mono text-[11px] text-accent-cyan shrink-0 w-16 text-right">{d.speed.toFixed(1)} MB/s</span>
+          <span className="font-mono text-[11px] text-accent-cyan shrink-0 w-16 text-right">{speedDisplay}</span>
         ) : (
           <span className="inline-block text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: sc.bg, color: sc.color }}>{sc.label}</span>
         )}
         <div className="flex items-center gap-0.5 shrink-0">
+          {d.status === 'completed' && window.electronAPI && (
+            <button onClick={showInFolder} className="p-1 rounded hover:bg-bg-hover text-text-secondary hover:text-accent-blue" title="Show in folder"><FolderOpen size={13} /></button>
+          )}
           {d.status === 'downloading' && <button onClick={() => onPause(d.id)} className="p-1 rounded hover:bg-bg-hover text-text-secondary hover:text-text-primary" title="Pause"><Pause size={13} /></button>}
           {d.status === 'paused' && <button onClick={() => onResume(d.id)} className="p-1 rounded hover:bg-bg-hover text-text-secondary hover:text-accent-cyan" title="Resume"><Play size={13} /></button>}
           {d.status === 'error' && <button onClick={() => onRetry(d.id)} className="p-1 rounded hover:bg-bg-hover text-accent-amber" title="Retry"><RotateCw size={13} /></button>}
@@ -244,6 +253,12 @@ function CompactRow({ d, selected, toggleSelect, onPause, onResume, onRetry, onR
 /* ===== DETAILED ROW ===== */
 function DetailedRow({ d, selected, toggleSelect, onPause, onResume, onRetry, onRemove }: any) {
   const sc = statusConfig[d.status] || statusConfig.queued;
+  const speedDisplay = d.speed < 1 ? `${(d.speed * 1024).toFixed(0)} KB/s` : `${d.speed.toFixed(1)} MB/s`;
+  const showInFolder = () => {
+    if (window.electronAPI?.showInFolder) {
+      window.electronAPI.showInFolder(`/opt/kelex-downloads/${d.filename}`);
+    }
+  };
   return (
     <div className="bg-bg-secondary border border-border-subtle rounded-lg px-4 py-3 hover:border-border-default hover:bg-bg-tertiary transition-all">
       <div className="flex items-center gap-2.5">
@@ -262,11 +277,14 @@ function DetailedRow({ d, selected, toggleSelect, onPause, onResume, onRetry, on
         </div>
         <span className="font-mono text-[10px] text-text-tertiary shrink-0 w-8 text-right">{d.progress}%</span>
         {d.speed > 0 ? (
-          <span className="font-mono text-[11px] text-accent-cyan shrink-0 w-16 text-right">{d.speed.toFixed(1)} MB/s</span>
+          <span className="font-mono text-[11px] text-accent-cyan shrink-0 w-16 text-right">{speedDisplay}</span>
         ) : (
           <span className="inline-block text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0" style={{ backgroundColor: sc.bg, color: sc.color }}>{sc.label}</span>
         )}
         <div className="flex items-center gap-0.5 shrink-0">
+          {d.status === 'completed' && window.electronAPI && (
+            <button onClick={showInFolder} className="p-1 rounded hover:bg-bg-hover text-text-secondary hover:text-accent-blue" title="Show in folder"><FolderOpen size={13} /></button>
+          )}
           {d.status === 'downloading' && <button onClick={() => onPause(d.id)} className="p-1 rounded hover:bg-bg-hover text-text-secondary hover:text-text-primary" title="Pause"><Pause size={13} /></button>}
           {d.status === 'paused' && <button onClick={() => onResume(d.id)} className="p-1 rounded hover:bg-bg-hover text-text-secondary hover:text-accent-cyan" title="Resume"><Play size={13} /></button>}
           {d.status === 'error' && <button onClick={() => onRetry(d.id)} className="p-1 rounded hover:bg-bg-hover text-accent-amber" title="Retry"><RotateCw size={13} /></button>}
@@ -290,6 +308,12 @@ function DetailedRow({ d, selected, toggleSelect, onPause, onResume, onRetry, on
 /* ===== GRID CARD ===== */
 function GridCard({ d, selected, toggleSelect, onPause, onResume, onRetry, onRemove }: any) {
   const sc = statusConfig[d.status] || statusConfig.queued;
+  const speedDisplay = d.speed < 1 ? `${(d.speed * 1024).toFixed(0)} KB/s` : `${d.speed.toFixed(1)} MB/s`;
+  const showInFolder = () => {
+    if (window.electronAPI?.showInFolder) {
+      window.electronAPI.showInFolder(`/opt/kelex-downloads/${d.filename}`);
+    }
+  };
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
       className="bg-bg-secondary border border-border-subtle rounded-lg p-5 hover:-translate-y-0.5 transition-all hover:glow-blue hover:border-accent-blue/20">
@@ -309,10 +333,13 @@ function GridCard({ d, selected, toggleSelect, onPause, onResume, onRetry, onRem
       </div>
       <div className="flex justify-between items-center text-xs mb-3">
         <span className="font-mono text-text-tertiary">{d.progress}%</span>
-        {d.speed > 0 && <span className="font-mono text-accent-cyan">{d.speed.toFixed(1)} MB/s</span>}
+        {d.speed > 0 && <span className="font-mono text-accent-cyan">{speedDisplay}</span>}
         {d.speed === 0 && <span className="font-mono text-[10px] text-text-tertiary">{d.eta}</span>}
       </div>
       <div className="flex gap-1 justify-end pt-2 border-t border-border-subtle">
+        {d.status === 'completed' && window.electronAPI && (
+          <button onClick={showInFolder} className="p-1.5 rounded hover:bg-bg-hover text-text-secondary hover:text-accent-blue" title="Show in folder"><FolderOpen size={14} /></button>
+        )}
         {d.status === 'downloading' && <button onClick={() => onPause(d.id)} className="p-1.5 rounded hover:bg-bg-hover text-text-secondary hover:text-text-primary" title="Pause"><Pause size={14} /></button>}
         {d.status === 'paused' && <button onClick={() => onResume(d.id)} className="p-1.5 rounded hover:bg-bg-hover text-text-secondary hover:text-accent-cyan" title="Resume"><Play size={14} /></button>}
         {d.status === 'error' && <button onClick={() => onRetry(d.id)} className="p-1.5 rounded hover:bg-bg-hover text-accent-amber" title="Retry"><RotateCw size={14} /></button>}

@@ -105,7 +105,7 @@ function DownloadRow({ d, onPause, onResume, onCancel }: any) {
       </div>
       <div className="text-right shrink-0 min-w-[80px]">
         <p className="font-mono text-sm" style={{ color }}>{d.progress}%</p>
-        {d.speed > 0 && <p className="font-mono text-xs text-accent-cyan">{d.speed.toFixed(1)} MB/s</p>}
+        {d.speed > 0 && <p className="font-mono text-xs text-accent-cyan">{d.speed < 1 ? `${(d.speed * 1024).toFixed(0)} KB/s` : `${d.speed.toFixed(1)} MB/s`}</p>}
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {isActive ? (
@@ -127,7 +127,7 @@ function DownloadRow({ d, onPause, onResume, onCancel }: any) {
 
 /* ─── Home Page ─── */
 export default function Home() {
-  const { downloads, totalSpeed, activeCount, torEnabled, pauseDownload, resumeDownload, cancelDownload } = useDownloads();
+  const { downloads, totalSpeed, activeCount, torEnabled, pauseDownload, resumeDownload, cancelDownload, addDownload } = useDownloads();
   const [urlInput, setUrlInput] = useState('');
   const speedData = downloads.find(d => d.speed > 0)?.speedHistory.map((s, i) => ({ time: i, speed: s })) || Array(60).fill(0).map((_, i) => ({ time: i, speed: Math.random() * 15 }));
 
@@ -137,6 +137,20 @@ export default function Home() {
   const urlType = urlInput.includes('youtube') || urlInput.includes('youtu.be') ? 'youtube'
     : urlInput.startsWith('magnet:') ? 'magnet'
     : urlInput.startsWith('http') ? 'http' : null;
+
+  const handleDownload = () => {
+    if (!urlInput.trim()) return;
+    const url = urlInput.trim();
+    const type: any = url.includes('youtube') || url.includes('youtu.be') ? 'youtube'
+      : url.startsWith('magnet:') ? 'magnet'
+      : 'http';
+    addDownload({ url, type, filename: type === 'youtube' ? 'youtube_video' : undefined });
+    setUrlInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleDownload();
+  };
 
   const featureRows = [
     { icon: Globe, title: 'HTTP \u00B7 HTTPS \u00B7 FTP \u00B7 Magnet \u00B7 Torrent', desc: 'Download from any URL. Support for all protocols including BitTorrent with DHT, PEX, and magnet link handling.', color: 'var(--accent-blue)' },
@@ -191,6 +205,7 @@ export default function Home() {
               type="text"
               value={urlInput}
               onChange={e => setUrlInput(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Paste URL, YouTube link, Magnet link, or search torrents..."
               className="bg-transparent flex-1 text-text-primary placeholder:text-text-tertiary outline-none text-sm"
             />
@@ -203,7 +218,7 @@ export default function Home() {
                 {urlType}
               </span>
             )}
-            <button className="bg-accent-blue hover:opacity-90 text-white font-medium px-6 h-12 rounded-full transition-all hover:scale-[1.02] shrink-0 text-sm">
+            <button onClick={handleDownload} className="bg-accent-blue hover:opacity-90 text-white font-medium px-6 h-12 rounded-full transition-all hover:scale-[1.02] shrink-0 text-sm">
               DOWNLOAD
             </button>
           </div>
@@ -212,7 +227,7 @@ export default function Home() {
         {/* Stats */}
         <div className="relative z-10 mt-12 grid grid-cols-4 gap-4 max-w-[700px] w-full">
           <StatCard icon={Download} label="Active" value={activeCount} color="var(--status-downloading)" delay={0.5} />
-          <StatCard icon={Zap} label="Speed" value={`${totalSpeed.toFixed(1)} MB/s`} color="var(--accent-amber)" delay={0.6} />
+          <StatCard icon={Zap} label="Speed" value={totalSpeed < 1 ? `${(totalSpeed * 1024).toFixed(0)} KB/s` : `${totalSpeed.toFixed(1)} MB/s`} color="var(--accent-amber)" delay={0.6} />
           <StatCard icon={CheckCircle} label="Completed" value={completedToday} color="var(--status-completed)" delay={0.7} />
           <StatCard icon={Shield} label={`Tor: ${torEnabled ? 'ON' : 'OFF'}`} value={torEnabled ? 'Active' : 'Off'} color={torEnabled ? 'var(--accent-violet)' : 'var(--text-tertiary)'} delay={0.8} />
         </div>
@@ -365,7 +380,7 @@ export default function Home() {
           <p className="text-text-secondary text-lg max-w-[500px] mx-auto mb-8">Paste any URL above and experience the fastest download manager.</p>
         </FadeIn>
         <FadeIn delay={0.3}>
-          <button className="bg-accent-blue hover:opacity-90 text-white font-medium h-[52px] px-8 rounded-full transition-all hover:scale-[1.02] text-sm">
+          <button onClick={handleDownload} className="bg-accent-blue hover:opacity-90 text-white font-medium h-[52px] px-8 rounded-full transition-all hover:scale-[1.02] text-sm">
             START DOWNLOADING
           </button>
         </FadeIn>

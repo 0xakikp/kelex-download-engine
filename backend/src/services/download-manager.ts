@@ -1,10 +1,19 @@
 import { spawn, ChildProcess } from 'child_process';
-import { mkdir, unlink } from 'fs/promises';
-import { dirname, join, basename } from 'path';
+import { mkdir, unlink, access, readdir } from 'fs/promises';
+import { dirname, join, basename, extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger.js';
 import type { Download, DownloadCreateInput } from '../models/download.js';
 import { broadcastProgress } from '../websocket/progress.js';
+
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || '/opt/kelex-downloads';
 const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT) || 5;
@@ -43,7 +52,11 @@ class DownloadManager {
 
   create(input: DownloadCreateInput): Download {
     const id = uuidv4();
-    const filename = input.filename || basename(input.url) || 'download';
+    let filename = input.filename || basename(input.url) || 'download';
+    // For YouTube, use a safe default name if URL basename is just "watch" or empty
+    if (input.type === 'youtube' && (!filename || filename === 'watch' || filename === 'watch_v')) {
+      filename = 'youtube_video_' + id.slice(0, 8);
+    }
     const cleanName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
 
     const download: Download = {
@@ -139,9 +152,10 @@ class DownloadManager {
         }
       }, 1000);
 
-      proc.on('close', (code) => {
+      proc.on('close', async (code) => {
         clearInterval(interval);
-        if (code === 0) {
+        const exists = await fileExists(outputPath);
+        if (code === 0 && exists) {
           download.status = 'completed';
           download.progress = 100;
           download.completedAt = new Date().toISOString();
@@ -149,7 +163,11 @@ class DownloadManager {
           download.eta = 'Done';
           resolve();
         } else {
-          reject(new Error(`aria2c exited with code ${code}`));
+          if (!exists) {
+            reject(new Error('aria2c exited but output file was not created'));
+          } else {
+            reject(new Error(`aria2c exited with code ${code}`));
+          }
         }
       });
 
@@ -208,14 +226,34 @@ class DownloadManager {
         this.broadcast(download);
       });
 
-      proc.on('close', (code) => {
+      proc.on('close', async (code) => {
         if (code === 0) {
-          download.status = 'completed';
-          download.progress = 100;
-          download.completedAt = new Date().toISOString();
-          download.speed = 0;
-          download.eta = 'Done';
-          resolve();
+          // yt-dlp may write to a different filename if the output template produces one with the video title
+          // Check for the exact path first, then check for any .mp4 file with our ID prefix
+          let exists = await fileExists(outputPath);
+          if (!exists) {
+            try {
+              const files = await readdir(dirname(outputPath));
+              const base = basename(outputPath, extname(outputPath));
+              const matched = files.find((f: string) => f.startsWith(base) && f.endsWith('.' + format));
+              if (matched) {
+                download.outputPath = join(dirname(outputPath), matched);
+                exists = true;
+              }
+            } catch { /* ignore */ }
+          }
+          if (exists) {
+            download.status = 'completed';
+            download.progress = 100;
+            download.completedAt = new Date().toISOString();
+            download.speed = 0;
+            download.eta = 'Done';
+            resolve();
+          } else {
+            download.status = 'error';
+            download.error = 'yt-dlp finished but output file is missing';
+            reject(new Error('yt-dlp finished but output file is missing'));
+          }
         } else {
           reject(new Error(`yt-dlp exited with code ${code}`));
         }
@@ -256,15 +294,20 @@ class DownloadManager {
         if (match) lastProgress = parseInt(match[1], 10);
       });
 
-      proc.on('close', (code) => {
+      proc.on('close', async (code) => {
         clearInterval(interval);
-        if (code === 0) {
+        const exists = await fileExists(outputPath);
+        if (code === 0 && exists) {
           download.status = 'completed';
           download.progress = 100;
           download.completedAt = new Date().toISOString();
           resolve();
         } else {
-          reject(new Error(`aria2c torrent exited with code ${code}`));
+          if (!exists) {
+            reject(new Error('aria2c torrent exited but output file was not created'));
+          } else {
+            reject(new Error(`aria2c torrent exited with code ${code}`));
+          }
         }
       });
 
@@ -370,6 +413,12 @@ class DownloadManager {
       failed: all.filter(d => d.status === 'error').length,
       totalSpeed: all.filter(d => d.status === 'downloading').reduce((s, d) => s + d.speed, 0),
     };
+  }
+
+  // Allow external routes to inject directly tracked downloads (e.g., converter)
+  injectDownload(download: Download) {
+    this.downloads.set(download.id, download);
+    this.broadcast(download);
   }
 
   private broadcast(download: Download) {

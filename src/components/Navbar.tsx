@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home, Download, PlaySquare, Network, AudioLines, Puzzle,
-  Code, Settings, Moon, Sun, Shield, ShieldCheck, Bell, Plus
+  Code, Settings, Moon, Sun, Shield, ShieldCheck, Bell, Plus, FolderOpen
 } from 'lucide-react';
 import { useDownloads } from '@/context/DownloadContext';
 
@@ -13,6 +13,7 @@ const navItems = [
   { icon: AudioLines, label: 'Convert', path: '/converter' },
   { icon: Puzzle, label: 'Extension', path: '/extension' },
   { icon: Code, label: 'API', path: '/api-docs' },
+  { icon: FolderOpen, label: 'Files', path: '/files' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
@@ -74,7 +75,7 @@ export default function Navbar() {
 
         {totalSpeed > 0 && (
           <span className="font-mono text-xs text-accent-amber whitespace-nowrap">
-            {(totalSpeed / 1024 / 1024).toFixed(1)} MB/s
+            {totalSpeed < 1 ? `${(totalSpeed * 1024).toFixed(0)} KB/s` : `${totalSpeed.toFixed(1)} MB/s`}
           </span>
         )}
 

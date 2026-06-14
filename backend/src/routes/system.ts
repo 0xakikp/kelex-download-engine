@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { execSync } from 'child_process';
 import { statfs } from 'fs/promises';
+import os from 'os';
 
 export async function systemRoutes(fastify: FastifyInstance) {
   fastify.get('/system/info', async () => {
@@ -21,7 +22,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
       },
       cpu: {
         loadAverage: parseFloat(loadAvg),
-        count: require('os').cpus().length,
+        count: os.cpus().length,
       },
       disk: disk ? {
         total: disk.bsize * disk.blocks,
