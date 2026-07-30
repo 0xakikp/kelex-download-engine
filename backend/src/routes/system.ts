@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { execSync } from 'child_process';
 import { statfs } from 'fs/promises';
 import os from 'os';
+import { join } from 'path';
 
 export async function systemRoutes(fastify: FastifyInstance) {
   fastify.get('/system/info', async () => {
@@ -9,7 +10,7 @@ export async function systemRoutes(fastify: FastifyInstance) {
     const usedMem = execSync('free -m | awk \'/Mem:/ {print $3}\'').toString().trim();
     const loadAvg = execSync('cat /proc/loadavg').toString().trim().split(' ')[0];
     const uptime = execSync('cat /proc/uptime').toString().trim().split(' ')[0];
-    const disk = await statfs('/opt/kelex-downloads').catch(() => null);
+    const disk = await statfs(process.env.DOWNLOAD_DIR || join(os.homedir(), 'kelex-downloads')).catch(() => null);
 
     return {
       platform: process.platform,
@@ -29,6 +30,16 @@ export async function systemRoutes(fastify: FastifyInstance) {
         free: disk.bsize * disk.bfree,
         used: disk.bsize * (disk.blocks - disk.bfree),
       } : null,
+    };
+  });
+
+  fastify.get('/system/config', async () => {
+    return {
+      downloadDir: process.env.DOWNLOAD_DIR || join(os.homedir(), 'kelex-downloads'),
+      port: process.env.PORT || '3001',
+      host: process.env.HOST || '0.0.0.0',
+      nodeEnv: process.env.NODE_ENV || 'development',
+      defaultBrowser: process.env.KELEX_DEFAULT_BROWSER || null,
     };
   });
 

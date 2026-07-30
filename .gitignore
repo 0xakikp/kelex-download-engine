@@ -1,5 +1,8 @@
 .dockerignore
+.DS_Store
+*.pid
 dist/
 node_modules/
 release/
+downloads/
 *.AppImage

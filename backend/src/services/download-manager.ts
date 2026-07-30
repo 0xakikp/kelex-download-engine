@@ -1,6 +1,7 @@
 import { spawn, ChildProcess } from 'child_process';
-import { mkdir, unlink, access, readdir } from 'fs/promises';
+import { mkdir, unlink, access, readdir, readFile, writeFile, rename } from 'fs/promises';
 import { dirname, join, basename, extname } from 'path';
+import os from 'os';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger.js';
 import type { Download, DownloadCreateInput } from '../models/download.js';
@@ -15,18 +16,73 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
-const DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || '/opt/kelex-downloads';
+const DEFAULT_DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || join(os.homedir(), 'kelex-downloads');
+const DOWNLOAD_DIR = DEFAULT_DOWNLOAD_DIR;
 const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT) || 5;
+const STATE_DIR = join(DOWNLOAD_DIR, '.kelex');
+const STATE_FILE = join(STATE_DIR, 'state.json');
 
 class DownloadManager {
   private downloads: Map<string, Download> = new Map();
   private activeProcesses: Map<string, ChildProcess> = new Map();
   private queue: string[] = [];
   private activeCount = 0;
+  private loaded = false;
+  private dirty = false;
 
   constructor() {
     this.ensureDownloadDir();
+    this.loadState();
     this.startQueueProcessor();
+    setInterval(() => this.flushState(), 1000);
+  }
+
+  private async loadState() {
+    try {
+      const raw = await readFile(STATE_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (parsed.downloads && Array.isArray(parsed.downloads)) {
+        for (const d of parsed.downloads) {
+          // Downloads that were active when the app crashed are recoverable,
+          // so mark them paused so the user can resume them.
+          if (d.status === 'downloading' || d.status === 'converting') {
+            d.status = 'paused';
+            d.speed = 0;
+            d.eta = 'Paused';
+          }
+          if (d.status === 'queued') {
+            this.queue.push(d.id);
+          }
+          this.downloads.set(d.id, d);
+        }
+        this.sortQueue();
+        logger.info({ count: this.downloads.size }, 'Loaded persisted download state');
+      }
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') {
+        logger.error({ err }, 'Failed to load download state');
+      }
+    } finally {
+      this.loaded = true;
+    }
+  }
+
+  private saveState() {
+    this.dirty = true;
+  }
+
+  private async flushState() {
+    if (!this.dirty) return;
+    this.dirty = false;
+    try {
+      await mkdir(STATE_DIR, { recursive: true });
+      const tmp = `${STATE_FILE}.tmp`;
+      const data = { downloads: this.getAll(), updatedAt: new Date().toISOString() };
+      await writeFile(tmp, JSON.stringify(data, null, 2));
+      await rename(tmp, STATE_FILE);
+    } catch (err) {
+      logger.error({ err }, 'Failed to save download state');
+    }
   }
 
   private async ensureDownloadDir() {
@@ -42,7 +98,7 @@ class DownloadManager {
   }
 
   private processQueue() {
-    if (this.activeCount >= MAX_CONCURRENT || this.queue.length === 0) return;
+    if (!this.loaded || this.activeCount >= MAX_CONCURRENT || this.queue.length === 0) return;
     const nextId = this.queue.shift();
     if (!nextId) return;
     const download = this.downloads.get(nextId);
@@ -77,6 +133,7 @@ class DownloadManager {
       category: input.category || 'General',
       quality: input.quality,
       format: input.format,
+      cookiesFromBrowser: input.cookiesFromBrowser || process.env.KELEX_DEFAULT_BROWSER,
     };
 
     this.downloads.set(id, download);
@@ -84,6 +141,7 @@ class DownloadManager {
     this.sortQueue();
     logger.info({ id, url: input.url }, 'Download created');
     this.broadcast(download);
+    this.saveState();
     return download;
   }
 
@@ -132,6 +190,8 @@ class DownloadManager {
         '--summary-interval', '1',
         '--console-log-level', 'warn',
         '--download-result', 'hide',
+        '--continue', 'true',
+        '--auto-file-renaming=false',
         '-d', dirname(outputPath),
         '-o', basename(outputPath),
         download.url,
@@ -195,8 +255,12 @@ class DownloadManager {
         '-o', outputPath,
         '--newline',
         '--no-warnings',
-        download.url,
+        '--continue',
       ];
+      if (download.cookiesFromBrowser) {
+        args.push('--cookies-from-browser', download.cookiesFromBrowser);
+      }
+      args.push(download.url);
 
       const proc = spawn('yt-dlp', args, { stdio: ['ignore', 'pipe', 'pipe'] });
       this.activeProcesses.set(download.id, proc);
@@ -206,6 +270,13 @@ class DownloadManager {
         const progressMatch = line.match(/(\d+\.?\d*)%/);
         const speedMatch = line.match(/at\s+([\d.]+\s*[KMGT]?i?B\/s)/);
         const etaMatch = line.match(/ETA\s+(\d+:\d+)/);
+        // Peer counts shown by yt-dlp for some sites: "Peers: 12" or "Seeds: 8" / "Leechers: 3"
+        const seedsMatch = line.match(/Seeds?:\s*(\d+)/i);
+        const leechersMatch = line.match(/Leechers?:\s*(\d+)/i);
+        const peersMatch = line.match(/Peers?:\s*(\d+)/i);
+        if (seedsMatch) download.seeds = parseInt(seedsMatch[1], 10);
+        if (leechersMatch) download.leechers = parseInt(leechersMatch[1], 10);
+        if (peersMatch) download.peers = parseInt(peersMatch[1], 10);
 
         if (progressMatch) {
           download.progress = parseFloat(progressMatch[1]);
@@ -269,6 +340,8 @@ class DownloadManager {
         '--seed-time', '0',
         '--max-upload-limit', '1K',
         '--summary-interval', '1',
+        '--continue', 'true',
+        '--auto-file-renaming=false',
         '-d', dirname(outputPath),
         '-o', basename(outputPath),
         download.url,
@@ -292,6 +365,10 @@ class DownloadManager {
         const line = data.toString();
         const match = line.match(/(\d+)%/);
         if (match) lastProgress = parseInt(match[1], 10);
+        const seedMatch = line.match(/(?:seeders?|seeds?):\s*(\d+)/i);
+        const leechMatch = line.match(/(?:leechers?|peers?:)\s*(\d+)/i);
+        if (seedMatch) download.seeds = parseInt(seedMatch[1], 10);
+        if (leechMatch) download.leechers = parseInt(leechMatch[1], 10);
       });
 
       proc.on('close', async (code) => {
@@ -325,6 +402,7 @@ class DownloadManager {
       download.speed = 0;
       download.eta = 'Paused';
       this.broadcast(download);
+      this.saveState();
       return true;
     }
     return false;
@@ -338,12 +416,14 @@ class DownloadManager {
       proc.kill('SIGCONT');
       download.status = 'downloading';
       this.broadcast(download);
+      this.saveState();
       return true;
     }
     download.status = 'queued';
     this.queue.push(id);
     this.sortQueue();
     this.broadcast(download);
+    this.saveState();
     return true;
   }
 
@@ -359,6 +439,7 @@ class DownloadManager {
     download.error = 'Cancelled by user';
     download.speed = 0;
     this.broadcast(download);
+    this.saveState();
     return true;
   }
 
@@ -370,7 +451,12 @@ class DownloadManager {
     this.queue = this.queue.filter(qid => qid !== id);
     if (download.outputPath) {
       unlink(download.outputPath).catch(() => {});
+      unlink(`${download.outputPath}.aria2`).catch(() => {});
+      unlink(`${download.outputPath}.part`).catch(() => {});
+      // yt-dlp may also write a fragment/template file with the video title
+      unlink(`${download.outputPath}.part-Frag1`).catch(() => {});
     }
+    this.saveState();
     return true;
   }
 
@@ -378,13 +464,12 @@ class DownloadManager {
     const download = this.downloads.get(id);
     if (!download) return false;
     download.status = 'queued';
-    download.progress = 0;
-    download.downloaded = 0;
     download.error = undefined;
     download.speed = 0;
     this.queue.push(id);
     this.sortQueue();
     this.broadcast(download);
+    this.saveState();
     return true;
   }
 
@@ -423,6 +508,7 @@ class DownloadManager {
 
   private broadcast(download: Download) {
     broadcastProgress(download);
+    this.saveState();
   }
 }
 

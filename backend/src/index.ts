@@ -68,3 +68,15 @@ try {
   app.log.error(err);
   process.exit(1);
 }
+
+['SIGINT', 'SIGTERM'].forEach((signal) => {
+  process.on(signal, async () => {
+    app.log.info(`${signal} received, shutting down gracefully...`);
+    try {
+      await app.close();
+    } catch (err) {
+      app.log.error(err);
+    }
+    process.exit(0);
+  });
+});

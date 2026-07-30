@@ -22,6 +22,10 @@ export interface Download {
   quality?: string;
   format?: string;
   outputPath?: string;
+  cookiesFromBrowser?: string;
+  seeds?: number;
+  leechers?: number;
+  peers?: number;
 }
 
 export interface DownloadCreateInput {
@@ -32,6 +36,7 @@ export interface DownloadCreateInput {
   category?: string;
   quality?: string;
   format?: string;
+  cookiesFromBrowser?: string;
 }
 
 export interface DownloadUpdateInput {

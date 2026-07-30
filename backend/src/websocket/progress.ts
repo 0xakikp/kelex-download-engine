@@ -1,3 +1,5 @@
+import type { WebSocket } from 'ws';
+import type { FastifyRequest } from 'fastify';
 import type { Download } from '../models/download.js';
 
 interface WSConnection {
@@ -6,10 +8,11 @@ interface WSConnection {
 
 const clients: Set<WSConnection> = new Set();
 
-export function wsHandler(connection: WSConnection) {
-  clients.add(connection);
-  connection.socket.onclose = () => clients.delete(connection);
-  connection.socket.onerror = () => clients.delete(connection);
+export function wsHandler(socket: WebSocket, _request: FastifyRequest) {
+  const client: WSConnection = { socket };
+  clients.add(client);
+  socket.onclose = () => clients.delete(client);
+  socket.onerror = () => clients.delete(client);
 }
 
 export function broadcastProgress(download: Download) {

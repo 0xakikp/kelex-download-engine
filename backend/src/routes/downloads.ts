@@ -10,6 +10,7 @@ const createSchema = z.object({
   category: z.string().optional(),
   quality: z.string().optional(),
   format: z.string().optional(),
+  cookiesFromBrowser: z.string().optional(),
 });
 
 export async function downloadRoutes(fastify: FastifyInstance) {

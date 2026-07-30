@@ -7,6 +7,7 @@ const downloadSchema = z.object({
   url: z.string().url(),
   quality: z.string().optional(),
   format: z.string().optional(),
+  cookiesFromBrowser: z.string().optional(),
 });
 
 export async function youtubeRoutes(fastify: FastifyInstance) {
@@ -111,6 +112,7 @@ export async function youtubeRoutes(fastify: FastifyInstance) {
       type: 'youtube',
       quality: body.quality,
       format: body.format,
+      cookiesFromBrowser: body.cookiesFromBrowser,
     });
     return reply.status(201).send(download);
   });
