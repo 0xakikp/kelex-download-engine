@@ -43,10 +43,6 @@ const COMMANDS = [
   'quit', 'exit',
 ];
 
-function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, '');
-}
-
 function printHelp(): void {
   console.log();
   console.log(header('Available Commands'));
@@ -307,43 +303,31 @@ export async function startRepl(): Promise<void> {
   let historyIndex = -1;
   let savedInput = '';
   const promptText = gradientText('kelex') + chalk.cyan(' ❯ ');
+  const PROMPT_VISIBLE_LEN = 8; // 'kelex ❯ '
 
   function getTerminalWidth(): number {
     return process.stdout.columns || 80;
   }
 
-  function drawInputBox(): void {
+  // Single-line prompt redrawn with carriage-return + erase-line.
+  // Far more terminal-compatible than multi-line cursor movement.
+  function drawPrompt(): void {
     const width = getTerminalWidth();
-    const top = chalk.hex('#0A84FF')('╭' + '─'.repeat(width - 2) + '╮');
-    const bottom = chalk.hex('#0A84FF')('╰' + '─'.repeat(width - 2) + '╯');
-    const left = chalk.hex('#0A84FF')('│ ') + promptText;
-    const right = chalk.hex('#0A84FF')(' │');
-    const available = Math.max(0, width - stripAnsi(left).length - stripAnsi(right).length);
-    const visibleInput = input.slice(-available);
-    const padding = ' '.repeat(available - stripAnsi(visibleInput).length);
-    const middle = left + visibleInput + padding + right;
-    process.stdout.write(top + '\n' + middle + '\n' + bottom + '\n');
-  }
-
-  function clearInputBox(): void {
-    // Cursor is at end of bottom border. Move up 2 lines (to top border) and clear down.
-    process.stdout.write('\x1b[2A\x1b[J');
-  }
-
-  function redraw(): void {
-    clearInputBox();
-    drawInputBox();
+    const available = Math.max(1, width - PROMPT_VISIBLE_LEN - 1);
+    const visible =
+      input.length > available ? '…' + input.slice(-(available - 1)) : input;
+    process.stdout.write('\r\x1b[2K' + promptText + visible);
   }
 
   function shutdown(): void {
-    clearInputBox();
+    process.stdout.write('\r\x1b[2K');
     console.log(chalk.gray('Goodbye.'));
     process.stdin.setRawMode(false);
     process.stdin.pause();
     process.exit(0);
   }
 
-  drawInputBox();
+  drawPrompt();
 
   process.stdin.setRawMode(true);
   process.stdin.resume();
@@ -386,7 +370,7 @@ export async function startRepl(): Promise<void> {
           if (historyIndex < history.length - 1) {
             historyIndex++;
             input = history[history.length - 1 - historyIndex];
-            redraw();
+            drawPrompt();
           }
         } else if (code === '\x1b[B') { // down
           if (historyIndex > 0) {
@@ -396,7 +380,7 @@ export async function startRepl(): Promise<void> {
             historyIndex = -1;
             input = savedInput;
           }
-          redraw();
+          drawPrompt();
         }
         // left/right/home/end ignored
         continue;
@@ -410,7 +394,7 @@ export async function startRepl(): Promise<void> {
           savedInput = '';
         }
         input = '';
-        clearInputBox();
+        process.stdout.write('\r\x1b[2K');
         if (line) {
           process.stdout.write(chalk.gray('› ') + chalk.white(line) + '\n');
           processing = true;
@@ -427,13 +411,13 @@ export async function startRepl(): Promise<void> {
             await handleInput(b);
           }
         }
-        drawInputBox();
+        drawPrompt();
         continue;
       }
 
       if (key === '\x7f' || key === '\b') { // backspace
         input = input.slice(0, -1);
-        redraw();
+        drawPrompt();
         continue;
       }
 
@@ -448,20 +432,20 @@ export async function startRepl(): Promise<void> {
           return;
         }
         input = input.slice(0, -1);
-        redraw();
+        drawPrompt();
         continue;
       }
 
       if (key === '\x0c') { // ctrl+l
         console.clear();
         printBanner();
-        drawInputBox();
+        drawPrompt();
         continue;
       }
 
       if (key >= ' ' && key <= '~') {
         input += key;
-        redraw();
+        drawPrompt();
         continue;
       }
 
@@ -474,6 +458,6 @@ export async function startRepl(): Promise<void> {
   });
 
   process.stdout.on('resize', () => {
-    redraw();
+    drawPrompt();
   });
 }
