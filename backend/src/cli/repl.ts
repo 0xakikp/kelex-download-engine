@@ -1,9 +1,7 @@
 import readline from 'node:readline';
 import chalk from 'chalk';
 import { isDebug } from './debug.js';
-import { api } from './client.js';
 import { header } from './styles.js';
-import { printBanner, printBox, gradientText } from './intro.js';
 import {
   listDownloads,
   showStats,
@@ -51,7 +49,7 @@ function printHelp(): void {
     ['download <url>', 'Add a new download'],
     ['list / ls', 'List all downloads'],
     ['active', 'List active downloads'],
-    ['status / s', 'Live status dashboard (run outside REPL)'],
+    ['status / s', 'Show download statistics'],
     ['info <id>', 'Show download details and saved path'],
     ['config', 'Show configuration and download directory'],
     ['open <id>', 'Open a downloaded file'],
@@ -68,7 +66,7 @@ function printHelp(): void {
     ['files', 'List downloaded files'],
     ['file delete <name>', 'Delete a downloaded file'],
     ['stats', 'Show download statistics'],
-    ['watch', 'Watch live progress (run outside REPL)'],
+    ['watch', 'Live progress (dashboard above is always live)'],
     ['clear', 'Clear the screen'],
     ['help', 'Show this help'],
     ['quit / exit', 'Exit REPL'],
@@ -186,7 +184,7 @@ export async function executeLine(line: string): Promise<boolean> {
 
       case 'status':
       case 's':
-        console.log(chalk.gray('Tip: run `kelex status` outside the REPL for the full-screen dashboard.'));
+        await showStats();
         break;
 
       case 'info':
@@ -209,12 +207,11 @@ export async function executeLine(line: string): Promise<boolean> {
         break;
 
       case 'watch':
-        console.log(chalk.gray('Tip: run `kelex watch` outside the REPL for the full-screen watcher.'));
+        console.log(chalk.gray('The dashboard above is live — it updates continuously.'));
         break;
 
       case 'clear':
         console.clear();
-        printBanner();
         break;
 
       case 'help':
@@ -279,185 +276,7 @@ export async function startRepl(): Promise<void> {
     startFallbackRepl();
     return;
   }
-
-  const [stats, config] = await Promise.all([
-    api('/api/v1/downloads/stats').catch(() => ({} as any)),
-    api('/api/v1/system/config').catch(() => ({ downloadDir: '/opt/kelex-downloads', host: '127.0.0.1', port: '3001' })),
-  ]);
-
-  console.clear();
-  printBanner();
-
-  const statusContent = [
-    `${gradientText('Backend:')} ${chalk.cyan(`http://${config.host}:${config.port}`)}`,
-    `${gradientText('Download dir:')} ${chalk.cyan(config.downloadDir)}`,
-    `${gradientText('Queue:')} ${chalk.white(stats.total ?? 0)} total · ${chalk.cyan(stats.active ?? 0)} active · ${chalk.green(stats.completed ?? 0)} completed · ${chalk.red(stats.failed ?? 0)} failed`,
-    '',
-    `${chalk.gray('Type a command and press Enter · Try: download <url> · list · help')}`,
-    `${chalk.gray('Press Ctrl+C or type quit / exit to leave')}`,
-  ].join('\n');
-  printBox(gradientText('Kelex Command Shell'), statusContent, '#AF52DE');
-
-  let input = '';
-  const history: string[] = [];
-  let historyIndex = -1;
-  let savedInput = '';
-  const promptText = gradientText('kelex') + chalk.cyan(' ❯ ');
-  const PROMPT_VISIBLE_LEN = 8; // 'kelex ❯ '
-
-  function getTerminalWidth(): number {
-    return process.stdout.columns || 80;
-  }
-
-  // Single-line prompt redrawn with carriage-return + erase-line.
-  // Far more terminal-compatible than multi-line cursor movement.
-  function drawPrompt(): void {
-    const width = getTerminalWidth();
-    const available = Math.max(1, width - PROMPT_VISIBLE_LEN - 1);
-    const visible =
-      input.length > available ? '…' + input.slice(-(available - 1)) : input;
-    process.stdout.write('\r\x1b[2K' + promptText + visible);
-  }
-
-  function shutdown(): void {
-    process.stdout.write('\r\x1b[2K');
-    console.log(chalk.gray('Goodbye.'));
-    process.stdin.setRawMode(false);
-    process.stdin.pause();
-    process.exit(0);
-  }
-
-  drawPrompt();
-
-  process.stdin.setRawMode(true);
-  process.stdin.resume();
-  process.stdin.setEncoding('utf8');
-
-  let processing = false;
-  let buffered = '';
-
-  function consumeEscape(seq: string): number {
-    // CSI sequences start with \x1b[ and end in 0x40-0x7E.
-    if (seq.length >= 3 && seq[1] === '[') {
-      let j = 2;
-      while (j < seq.length) {
-        const code = seq.charCodeAt(j);
-        if (code >= 0x40 && code <= 0x7e) return j + 1;
-        j++;
-      }
-    }
-    // Non-CSI escape sequences usually end after one more char.
-    return seq.length >= 2 ? 2 : 1;
-  }
-
-  async function handleInput(data: string): Promise<void> {
-    if (processing) {
-      buffered += data;
-      return;
-    }
-
-    for (let i = 0; i < data.length; i++) {
-      const key = data[i];
-      const seq = data.slice(i);
-
-      if (key === '\x1b') {
-        const consumed = consumeEscape(seq);
-        const code = seq.slice(0, consumed);
-        i += consumed - 1;
-
-        if (code === '\x1b[A') { // up
-          if (historyIndex === -1) savedInput = input;
-          if (historyIndex < history.length - 1) {
-            historyIndex++;
-            input = history[history.length - 1 - historyIndex];
-            drawPrompt();
-          }
-        } else if (code === '\x1b[B') { // down
-          if (historyIndex > 0) {
-            historyIndex--;
-            input = history[history.length - 1 - historyIndex];
-          } else if (historyIndex === 0) {
-            historyIndex = -1;
-            input = savedInput;
-          }
-          drawPrompt();
-        }
-        // left/right/home/end ignored
-        continue;
-      }
-
-      if (key === '\r' || key === '\n') {
-        const line = input.trim();
-        if (line) {
-          history.push(line);
-          historyIndex = -1;
-          savedInput = '';
-        }
-        input = '';
-        process.stdout.write('\r\x1b[2K');
-        if (line) {
-          process.stdout.write(chalk.gray('› ') + chalk.white(line) + '\n');
-          processing = true;
-          const continueRepl = await executeLine(line);
-          processing = false;
-          if (!continueRepl) {
-            shutdown();
-            return;
-          }
-          // Flush any input that arrived while the command ran.
-          if (buffered) {
-            const b = buffered;
-            buffered = '';
-            await handleInput(b);
-          }
-        }
-        drawPrompt();
-        continue;
-      }
-
-      if (key === '\x7f' || key === '\b') { // backspace
-        input = input.slice(0, -1);
-        drawPrompt();
-        continue;
-      }
-
-      if (key === '\x03') { // ctrl+c
-        shutdown();
-        return;
-      }
-
-      if (key === '\x04') { // ctrl+d
-        if (input === '') {
-          shutdown();
-          return;
-        }
-        input = input.slice(0, -1);
-        drawPrompt();
-        continue;
-      }
-
-      if (key === '\x0c') { // ctrl+l
-        console.clear();
-        printBanner();
-        drawPrompt();
-        continue;
-      }
-
-      if (key >= ' ' && key <= '~') {
-        input += key;
-        drawPrompt();
-        continue;
-      }
-
-      // Ignore other control characters
-    }
-  }
-
-  process.stdin.on('data', (data: string) => {
-    handleInput(data).catch(() => {});
-  });
-
-  process.stdout.on('resize', () => {
-    drawPrompt();
-  });
+  // Unified interactive shell: live dashboard + boxed command output + prompt.
+  const { startDashboardShell } = await import('./commands/dashboard-shell.js');
+  await startDashboardShell();
 }

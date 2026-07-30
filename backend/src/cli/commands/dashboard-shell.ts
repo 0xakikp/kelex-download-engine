@@ -1,8 +1,8 @@
 import WebSocket from 'ws';
 import chalk from 'chalk';
+import boxen from 'boxen';
 import { API_BASE, api, ensureBackend } from '../client.js';
 import {
-  header,
   gradientText,
   statusColors,
   statusEmojis,
@@ -15,11 +15,8 @@ import type { Download } from '../types.js';
 
 const GRAPH_BARS = 30;
 const graphHistory: number[] = [];
-const MAX_LOG_LINES = 50;
-
-function stripAnsi(str: string): string {
-  return str.replace(/\x1b\[[0-9;]*m/g, '');
-}
+const MAX_LOG_LINES = 200;
+const PROMPT_VISIBLE_LEN = 8; // 'kelex ❯ '
 
 export async function startDashboardShell(): Promise<void> {
   await ensureBackend();
@@ -40,16 +37,19 @@ export async function startDashboardShell(): Promise<void> {
   let savedInput = '';
   const promptText = gradientText('kelex') + chalk.cyan(' ❯ ');
   const logs: string[] = [];
+  let logLineCount = 0;
   let processing = false;
   let buffered = '';
 
-  function addLog(text: string) {
-    const lines = text.split('\n');
-    for (const line of lines) {
-      if (line === '' && logs.length > 0 && logs[logs.length - 1] === '') continue;
-      logs.push(line);
+  function addBlock(text: string) {
+    const block = text.replace(/\n+$/, '');
+    if (!block) return;
+    logs.push(block);
+    logLineCount += block.split('\n').length;
+    while (logLineCount > MAX_LOG_LINES && logs.length) {
+      const removed = logs.shift()!;
+      logLineCount -= removed.split('\n').length;
     }
-    while (logs.length > MAX_LOG_LINES) logs.shift();
   }
 
   function getTerminalWidth(): number {
@@ -60,29 +60,22 @@ export async function startDashboardShell(): Promise<void> {
     return process.stdout.rows || 24;
   }
 
-  function drawInputBox(): string {
-    const width = getTerminalWidth();
-    const top = chalk.hex('#0A84FF')('╭' + '─'.repeat(width - 2) + '╮');
-    const bottom = chalk.hex('#0A84FF')('╰' + '─'.repeat(width - 2) + '╯');
-    const left = chalk.hex('#0A84FF')('│ ') + promptText;
-    const right = chalk.hex('#0A84FF')(' │');
-    const available = Math.max(0, width - stripAnsi(left).length - stripAnsi(right).length);
-    const visibleInput = input.slice(-available);
-    const padding = ' '.repeat(available - stripAnsi(visibleInput).length);
-    const middle = left + visibleInput + padding + right;
-    return top + '\n' + middle + '\n' + bottom;
-  }
-
-  function renderDashboard(): string {
+  function renderDashboard(maxDownloads: number): string[] {
     const lines: string[] = [];
-    lines.push(header('Live Dashboard'));
-    lines.push(chalk.gray(`📁 ${config.downloadDir}`));
+    lines.push(
+      gradientText('KELEX') +
+        chalk.gray(' — Live Shell · ') +
+        chalk.cyan(`${config.host}:${config.port}`) +
+        chalk.gray(' · 📁 ') +
+        chalk.cyan(config.downloadDir)
+    );
 
-    const active = Array.from(downloads.values()).filter(d => d.status === 'downloading');
-    const paused = Array.from(downloads.values()).filter(d => d.status === 'paused');
-    const queued = Array.from(downloads.values()).filter(d => d.status === 'queued');
-    const completed = Array.from(downloads.values()).filter(d => d.status === 'completed');
-    const failed = Array.from(downloads.values()).filter(d => d.status === 'error');
+    const all = Array.from(downloads.values());
+    const active = all.filter(d => d.status === 'downloading');
+    const paused = all.filter(d => d.status === 'paused');
+    const queued = all.filter(d => d.status === 'queued');
+    const completed = all.filter(d => d.status === 'completed');
+    const failed = all.filter(d => d.status === 'error');
 
     lines.push(
       `${chalk.cyan('⬇️ Active')} ${active.length}  ` +
@@ -94,27 +87,25 @@ export async function startDashboardShell(): Promise<void> {
     );
 
     const totalSpeed = active.reduce((s, d) => s + d.speed, 0);
-    graphHistory.push(totalSpeed);
-    if (graphHistory.length > GRAPH_BARS) graphHistory.shift();
     const maxSpeed = Math.max(...graphHistory, 1);
-
-    lines.push(chalk.bold(`⚡ ${formatSpeed(totalSpeed)}`) + ' ' +
-      graphHistory
-        .map((s) => {
-          const h = Math.round((s / maxSpeed) * 6);
-          const levels = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-          return levels[h];
-        })
-        .join('')
+    lines.push(
+      chalk.bold(`⚡ ${formatSpeed(totalSpeed)}`) + ' ' +
+        graphHistory
+          .map((s) => {
+            const h = Math.round((s / maxSpeed) * 6);
+            const levels = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+            return levels[h];
+          })
+          .join('')
     );
 
     if (downloads.size === 0) {
-      lines.push(chalk.gray('No downloads. Type a command below to add one.'));
-    } else {
-      const all = Array.from(downloads.values()).sort(
+      lines.push(chalk.gray('No downloads yet — type: download <url>'));
+    } else if (maxDownloads > 0) {
+      const sorted = all.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      for (const d of all.slice(0, 6)) {
+      for (const d of sorted.slice(0, maxDownloads)) {
         const color = statusColors[d.status] || chalk.white;
         const emoji = statusEmojis[d.status] || '•';
         const peerInfo =
@@ -125,37 +116,68 @@ export async function startDashboardShell(): Promise<void> {
         lines.push(`   ${progressBar(d.progress, 18)} ${chalk.bold(`${d.progress.toFixed(1)}%`)}  ${formatSpeed(d.speed)}  ${formatSize(d.size)}`);
         lines.push(`   ${color(d.status.toUpperCase())} · ${chalk.gray(d.id.slice(0, 8))}${peerInfo}`);
       }
-      if (all.length > 6) {
-        lines.push(chalk.gray(`... and ${all.length - 6} more`));
+      if (sorted.length > maxDownloads) {
+        lines.push(chalk.gray(`… and ${sorted.length - maxDownloads} more`));
       }
     }
 
-    return lines.join('\n');
+    return lines;
   }
 
-  function render() {
+  function promptLine(): string {
+    const width = getTerminalWidth();
+    const available = Math.max(1, width - PROMPT_VISIBLE_LEN - 1);
+    const visible =
+      input.length > available ? '…' + input.slice(-(available - 1)) : input;
+    return promptText + visible;
+  }
+
+  function doRender(sampleSpeed: boolean): void {
+    if (sampleSpeed) {
+      const totalSpeed = Array.from(downloads.values())
+        .filter(d => d.status === 'downloading')
+        .reduce((s, d) => s + d.speed, 0);
+      graphHistory.push(totalSpeed);
+      if (graphHistory.length > GRAPH_BARS) graphHistory.shift();
+    }
+
     const height = getTerminalHeight();
-    const reserved = 4; // hint line + input box (3 lines)
-    const dashboardLines = renderDashboard().split('\n');
-    const maxLogRows = Math.max(0, height - dashboardLines.length - reserved);
-    const visibleLogs = logs.slice(-maxLogRows);
+    // hint(1) + prompt(1) + divider(1)
+    const reserved = 3;
+    // header(1) + stats(1) + speed(1) = 3 fixed dashboard rows
+    const fixedDash = 3;
+    const maxDownloads = Math.max(0, Math.min(5, Math.floor((height - reserved - fixedDash - 4) / 3)));
+    const dashLines = renderDashboard(maxDownloads);
+
+    const logRows = Math.max(0, height - reserved - dashLines.length - 1);
+    // Flatten and keep the most recent lines — an oversized block (e.g. help)
+    // gets cropped from the top instead of hiding the whole log region.
+    const allLogLines = logs.flatMap(b => b.split('\n'));
+    const visibleLogs = allLogLines.slice(-logRows);
 
     const frame: string[] = [];
-    frame.push(...dashboardLines);
+    frame.push(...dashLines);
+    frame.push(chalk.hex('#333333')('─'.repeat(getTerminalWidth())));
     frame.push(...visibleLogs);
-    // Pad to fill the screen so the input box stays at the bottom
     while (frame.length < height - reserved) frame.push('');
-    frame.push(chalk.gray('Type commands below · Ctrl+C to exit'));
-    frame.push(drawInputBox());
+    frame.push(chalk.gray('↑ history · help · clear · quit'));
+    frame.push(promptLine());
 
-    console.clear();
-    process.stdout.write(frame.map(line => line).join('\n'));
+    // Cursor-home + repaint + clear-below. No full-screen clear flicker.
+    process.stdout.write('\x1b[H' + frame.join('\n') + '\x1b[J');
+  }
+
+  function requestRender(sampleSpeed = false): void {
+    if (processing) {
+      return;
+    }
+    doRender(sampleSpeed);
   }
 
   function shutdown() {
     clearInterval(renderInterval);
-    console.clear();
-    console.log(chalk.gray('Dashboard closed. Run `kelex repl` for a dedicated command shell.'));
+    process.stdout.write('\x1b[?1049l'); // leave alternate screen
+    console.log(chalk.gray('Shell closed. Backend keeps running — `kelex list` anytime.'));
     process.stdin.setRawMode(false);
     process.stdin.pause();
     process.exit(0);
@@ -164,10 +186,9 @@ export async function startDashboardShell(): Promise<void> {
   async function runCommand(line: string): Promise<boolean> {
     if (line.trim() === 'clear') {
       logs.length = 0;
+      logLineCount = 0;
       return true;
     }
-
-    addLog(`${chalk.gray('›')} ${line}`);
 
     const originalStdoutWrite = process.stdout.write.bind(process.stdout);
     const originalStderrWrite = process.stderr.write.bind(process.stderr);
@@ -190,8 +211,26 @@ export async function startDashboardShell(): Promise<void> {
       process.stderr.write = originalStderrWrite;
     }
 
-    if (chunks.length) {
-      addLog(chunks.join(''));
+    const output = chunks.join('').replace(/\n+$/, '');
+    if (output.trim()) {
+      if (/[╭╮╰╯│┌┐└┘─]/.test(output)) {
+        // Output already renders its own box/table — don't double-wrap it.
+        addBlock(chalk.gray(`› ${line}`) + '\n' + output);
+      } else {
+        addBlock(
+          boxen(output, {
+            title: `› ${line}`,
+            titleAlignment: 'left',
+            padding: 0,
+            margin: 0,
+            borderStyle: 'round',
+            borderColor: '#AF52DE' as any,
+            dimBorder: true,
+          })
+        );
+      }
+    } else {
+      addBlock(chalk.gray(`› ${line}`));
     }
 
     return continueShell;
@@ -230,7 +269,7 @@ export async function startDashboardShell(): Promise<void> {
             historyIndex++;
             input = history[history.length - 1 - historyIndex];
           }
-          render();
+          requestRender();
         } else if (code === '\x1b[B') { // down
           if (historyIndex > 0) {
             historyIndex--;
@@ -239,7 +278,7 @@ export async function startDashboardShell(): Promise<void> {
             historyIndex = -1;
             input = savedInput;
           }
-          render();
+          requestRender();
         }
         continue;
       }
@@ -266,13 +305,13 @@ export async function startDashboardShell(): Promise<void> {
             await handleInput(b);
           }
         }
-        render();
+        doRender(false);
         continue;
       }
 
       if (key === '\x7f' || key === '\b') {
         input = input.slice(0, -1);
-        render();
+        requestRender();
         continue;
       }
 
@@ -287,29 +326,33 @@ export async function startDashboardShell(): Promise<void> {
           return;
         }
         input = input.slice(0, -1);
-        render();
+        requestRender();
         continue;
       }
 
       if (key === '\x0c') {
         logs.length = 0;
-        render();
+        logLineCount = 0;
+        requestRender();
         continue;
       }
 
       if (key >= ' ' && key <= '~') {
         input += key;
-        render();
+        requestRender();
         continue;
       }
     }
   }
 
-  // Initial render
-  render();
+  // Enter alternate screen so the user's scrollback is preserved.
+  process.stdout.write('\x1b[?1049h\x1b[H');
 
-  // Keep the dashboard visually live even when no websocket events arrive.
-  const renderInterval = setInterval(() => render(), 1000);
+  // Initial render
+  doRender(true);
+
+  // Live heartbeat: keep speeds/sparkline fresh even without WS events.
+  const renderInterval = setInterval(() => requestRender(true), 1000);
 
   const wsUrl = API_BASE.replace(/^http/, 'ws') + '/ws/progress';
   const ws = new WebSocket(wsUrl);
@@ -320,7 +363,7 @@ export async function startDashboardShell(): Promise<void> {
       if (msg.type === 'download.progress') {
         const d: Download = msg.data;
         downloads.set(d.id, d);
-        render();
+        requestRender();
       }
     } catch {
       // ignore malformed
@@ -328,13 +371,13 @@ export async function startDashboardShell(): Promise<void> {
   });
 
   ws.on('error', (err: Error) => {
-    addLog(chalk.red(`WebSocket error: ${err.message}`));
-    render();
+    addBlock(chalk.red(`WebSocket error: ${err.message}`));
+    requestRender();
   });
 
   ws.on('close', () => {
-    addLog(chalk.gray('Disconnected from backend.'));
-    render();
+    addBlock(chalk.gray('Disconnected from backend.'));
+    requestRender();
   });
 
   process.stdin.setRawMode(true);
@@ -346,7 +389,7 @@ export async function startDashboardShell(): Promise<void> {
   });
 
   process.stdout.on('resize', () => {
-    render();
+    requestRender();
   });
 
   return new Promise(() => {});
