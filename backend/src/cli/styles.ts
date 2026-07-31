@@ -44,12 +44,76 @@ export function progressBar(percent: number, width = 20): string {
   return chalk.gray(bar);
 }
 
-export function gradientText(text: string, colors: string[] = ['#0A84FF', '#AF52DE']): string {
+export interface Theme {
+  name: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  gradient: string[];
+}
+
+export const themes: Record<string, Theme> = {
+  cyber: {
+    name: 'Cyber Neon (Default)',
+    primary: '#0A84FF',
+    secondary: '#AF52DE',
+    accent: '#30D158',
+    gradient: ['#0A84FF', '#AF52DE'],
+  },
+  dracula: {
+    name: 'Dracula Dark',
+    primary: '#BD93F9',
+    secondary: '#FF79C6',
+    accent: '#8BE9FD',
+    gradient: ['#BD93F9', '#FF79C6'],
+  },
+  matrix: {
+    name: 'Matrix Hacker',
+    primary: '#00FF66',
+    secondary: '#50FA7B',
+    accent: '#00E676',
+    gradient: ['#00FF66', '#50FA7B'],
+  },
+  nord: {
+    name: 'Nordic Frost',
+    primary: '#88C0D0',
+    secondary: '#81A1C1',
+    accent: '#A3BE8C',
+    gradient: ['#88C0D0', '#81A1C1'],
+  },
+  sunset: {
+    name: 'Vibrant Sunset',
+    primary: '#FF5E36',
+    secondary: '#FFB340',
+    accent: '#FFD600',
+    gradient: ['#FF5E36', '#FFB340'],
+  },
+};
+
+let currentTheme: Theme = themes.cyber;
+
+export function setTheme(name: string): Theme {
+  const key = name.toLowerCase();
+  if (themes[key]) {
+    currentTheme = themes[key];
+  }
+  return currentTheme;
+}
+
+export function getTheme(): Theme {
+  return currentTheme;
+}
+
+export function statusColor(status: string): typeof chalk {
+  return statusColors[status] || chalk.cyan;
+}
+
+export function gradientText(text: string, colors: string[] = currentTheme.gradient): string {
   return gradient(colors)(text);
 }
 
 export function header(text: string): string {
-  return gradient(['#0A84FF', '#AF52DE'])(text);
+  return gradient(currentTheme.gradient)(text);
 }
 
 export function link(text: string, url: string, color?: string): string {

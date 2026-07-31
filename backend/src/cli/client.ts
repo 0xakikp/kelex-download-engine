@@ -146,11 +146,12 @@ export async function api(path: string, options: RequestInit = {}): Promise<any>
 }
 
 export async function apiPost(path: string, body?: unknown): Promise<any> {
-  return api(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const options: RequestInit = { method: 'POST' };
+  if (body !== undefined) {
+    options.headers = { 'Content-Type': 'application/json' };
+    options.body = JSON.stringify(body);
+  }
+  return api(path, options);
 }
 
 export async function apiDelete(path: string): Promise<any> {

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelex Download Manager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">KELEX</span>
+      </div>
+      <div id="status-pill" class="status-pill offline">
+        <span class="dot"></span>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </header>
+
+    <!-- Current Tab Card -->
+    <main class="main-content">
+      <section class="card tab-card">
+        <div class="card-header">
+          <span class="card-title">CURRENT TAB</span>
+          <span id="tab-type" class="badge">MEDIA</span>
+        </div>
+        <div class="tab-info">
+          <div id="tab-title" class="tab-name">Detecting tab...</div>
+          <div id="tab-url" class="tab-url">http://...</div>
+        </div>
+        <button id="btn-download-tab" class="btn btn-primary btn-full">
+          <span class="btn-icon">⬇️</span> Download Current Page / Video
+        </button>
+      </section>
+
+      <!-- Quick Add URL Input -->
+      <section class="card input-card">
+        <div class="card-header">
+          <span class="card-title">ADD URL</span>
+        </div>
+        <div class="input-group">
+          <input type="text" id="url-input" placeholder="Paste URL (HTTP, YouTube, Magnet, Torrent)..." />
+          <button id="btn-add-url" class="btn btn-secondary">Add</button>
+        </div>
+      </section>
+
+      <!-- Live Backend Stats -->
+      <section class="card stats-card">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Active</span>
+            <span id="stat-active" class="stat-value cyan">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Completed</span>
+            <span id="stat-completed" class="stat-value green">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Failed</span>
+            <span id="stat-failed" class="stat-value red">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Speed</span>
+            <span id="stat-speed" class="stat-value bold">0 KB/s</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Toggle Settings -->
+      <section class="settings-row">
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-cookies" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-text">Forward Session Cookies (For Paywalled/Login Media)</span>
+        </label>
+      </section>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -8,3 +8,8 @@ export * from './dashboard-shell.js';
 export * from './config.js';
 export * from './info.js';
 export * from './open.js';
+export * from './extension.js';
+export * from './limit.js';
+export * from './theme.js';
+export * from './search.js';
+export * from './convert.js';

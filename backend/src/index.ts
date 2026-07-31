@@ -17,8 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PORT = Number(process.env.PORT) || 3001;
-const HOST = process.env.HOST || '0.0.0.0';
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const HOST = process.env.HOST || '127.0.0.1';
 
 const app = Fastify({
   logger: true,
@@ -26,23 +25,17 @@ const app = Fastify({
 });
 
 await app.register(cors, {
-  origin: NODE_ENV === 'development' ? ['http://localhost:3000', 'http://localhost:5173'] : true,
+  origin: true,
   credentials: true,
 });
 
 await app.register(sensible);
 await app.register(websocket);
 
-// Serve static frontend in production
-if (NODE_ENV === 'production') {
-  await app.register(staticPlugin, {
-    root: join(__dirname, '../../dist'),
-    prefix: '/',
-  });
-  app.setNotFoundHandler(async (_request, reply) => {
-    return reply.sendFile('index.html');
-  });
-}
+await app.register(staticPlugin, {
+  root: join(__dirname, '../public'),
+  prefix: '/app',
+});
 
 // WebSocket for real-time progress
 await app.register(async function (fastify) {
@@ -64,9 +57,20 @@ app.get('/api/v1/health', async () => ({ status: 'ok', version: '2.0.0' }));
 try {
   await app.listen({ port: PORT, host: HOST });
   console.log(`🚀 Kelex Backend running on http://${HOST}:${PORT}`);
-} catch (err) {
-  app.log.error(err);
-  process.exit(1);
+} catch (err: any) {
+  if (err.code === 'EPERM' || err.code === 'EADDRINUSE') {
+    try {
+      await app.listen({ port: PORT, host: '127.0.0.1' });
+      console.log(`🚀 Kelex Backend running on http://127.0.0.1:${PORT}`);
+    } catch (err2) {
+      const fallbackPort = PORT + 1;
+      await app.listen({ port: fallbackPort, host: '127.0.0.1' });
+      console.log(`🚀 Kelex Backend running on http://127.0.0.1:${fallbackPort}`);
+    }
+  } else {
+    app.log.error(err);
+    process.exit(1);
+  }
 }
 
 ['SIGINT', 'SIGTERM'].forEach((signal) => {

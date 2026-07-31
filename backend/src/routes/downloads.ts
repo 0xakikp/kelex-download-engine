@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { downloadManager } from '../services/download-manager.js';
+import { convertMedia } from '../services/converter.js';
 
 const createSchema = z.object({
   url: z.string().url(),
@@ -67,10 +68,14 @@ export async function downloadRoutes(fastify: FastifyInstance) {
     return { success: true };
   });
 
-  fastify.post('/:id/retry', async (request) => {
+  fastify.post('/:id/convert', async (request) => {
     const { id } = request.params as { id: string };
-    const ok = downloadManager.retry(id);
-    if (!ok) return fastify.httpErrors.notFound('Download not found');
-    return { success: true };
+    const { format = 'mp3' } = (request.body || {}) as { format?: string };
+    const download = downloadManager.get(id);
+    if (!download || !download.outputPath) {
+      return fastify.httpErrors.notFound('Completed download file not found');
+    }
+    const result = await convertMedia(download.outputPath, format);
+    return result;
   });
 }

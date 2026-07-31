@@ -26,6 +26,7 @@ export interface Download {
   seeds?: number;
   leechers?: number;
   peers?: number;
+  retries?: number;
 }
 
 export interface DownloadCreateInput {

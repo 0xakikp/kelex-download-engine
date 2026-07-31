@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { spawn } from 'child_process';
 import { downloadManager } from '../services/download-manager.js';
+import { resolveBinary } from '../utils/dependencies.js';
 
 const downloadSchema = z.object({
   url: z.string().url(),
@@ -16,8 +17,9 @@ export async function youtubeRoutes(fastify: FastifyInstance) {
     const { url } = request.query as { url: string };
     if (!url) return fastify.httpErrors.badRequest('URL required');
 
+    const binary = await resolveBinary('yt-dlp');
     return new Promise((resolve, reject) => {
-      const proc = spawn('yt-dlp', [
+      const proc = spawn(binary, [
         '--dump-json',
         '--no-download',
         '--no-warnings',
@@ -26,6 +28,13 @@ export async function youtubeRoutes(fastify: FastifyInstance) {
 
       let output = '';
       proc.stdout?.on('data', (d) => { output += d; });
+      proc.on('error', (err: any) => {
+        if (err.code === 'ENOENT') {
+          reject(fastify.httpErrors.badRequest('yt-dlp is not installed on this system. Run "brew install yt-dlp" to install it.'));
+        } else {
+          reject(err);
+        }
+      });
       proc.on('close', (code) => {
         if (code !== 0) {
           reject(fastify.httpErrors.badRequest('Failed to fetch video info'));
@@ -61,8 +70,9 @@ export async function youtubeRoutes(fastify: FastifyInstance) {
     const { q } = request.query as { q: string };
     if (!q) return fastify.httpErrors.badRequest('Query required');
 
+    const binary = await resolveBinary('yt-dlp');
     return new Promise((resolve, reject) => {
-      const proc = spawn('yt-dlp', [
+      const proc = spawn(binary, [
         '--dump-json',
         '--no-download',
         '--no-warnings',
@@ -75,6 +85,14 @@ export async function youtubeRoutes(fastify: FastifyInstance) {
       let stderr = '';
       proc.stdout?.on('data', (d) => { output += d; });
       proc.stderr?.on('data', (d) => { stderr += d; });
+
+      proc.on('error', (err: any) => {
+        if (err.code === 'ENOENT') {
+          resolve({ results: [], query: q, total: 0, error: 'yt-dlp is not installed. Run "brew install yt-dlp" to install YouTube support.' });
+        } else {
+          reject(err);
+        }
+      });
 
       proc.on('close', (code) => {
         if (code !== 0) {

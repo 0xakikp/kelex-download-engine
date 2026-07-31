@@ -27,6 +27,11 @@ import {
   showDownloadInfo,
   openDownload,
   openDownloadDir,
+  installExtension,
+  setSpeedLimit,
+  changeTheme,
+  searchTorrentsCLI,
+  convertMediaCLI,
 } from './commands/index.js';
 
 const program = new Command();
@@ -213,9 +218,13 @@ program
   });
 
 program
-  .command('repl')
-  .description('Open interactive command shell')
+  .command('cli')
+  .alias('shell')
+  .alias('repl')
+  .alias('dashboard')
+  .description('Open interactive Kelex CLI workspace')
   .action(async () => {
+    await printAnimatedBanner();
     await ensureBackend();
     await startRepl();
   });
@@ -226,6 +235,47 @@ program
   .action(async () => {
     await ensureBackend();
     await watchDownloads();
+  });
+
+const extCmd = program.command('extension').description('Browser extension management');
+
+extCmd
+  .command('install [browser]')
+  .alias('open')
+  .description('Auto-load Kelex extension in Brave/Chrome/Edge (e.g. kelex extension install brave)')
+  .action(async (browser) => {
+    await installExtension(browser);
+  });
+
+program
+  .command('limit <speed>')
+  .description('Set global download speed limit (e.g. kelex limit 5M, 500K, or off)')
+  .action(async (speed) => {
+    await ensureBackend();
+    await setSpeedLimit(speed);
+  });
+
+program
+  .command('theme [name]')
+  .description('Switch UI color theme (cyber, dracula, matrix, nord, sunset)')
+  .action(async (name) => {
+    await changeTheme(name);
+  });
+
+program
+  .command('search <query>')
+  .description('Search public torrents directly from terminal')
+  .action(async (query) => {
+    await ensureBackend();
+    await searchTorrentsCLI(query);
+  });
+
+program
+  .command('convert <id> [format]')
+  .description('Convert completed video download to MP3 audio or 720p/1080p MP4')
+  .action(async (id, format) => {
+    await ensureBackend();
+    await convertMediaCLI(id, format || 'mp3');
   });
 
 const server = program.command('server').description('Backend server management');

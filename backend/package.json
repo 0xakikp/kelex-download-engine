@@ -12,7 +12,9 @@
   },
   "type": "module",
   "bin": {
-    "kelex": "./dist/cli/index.js"
+    "kelex": "./dist/cli/index.js",
+    "kelexd-cli": "./dist/cli/index.js",
+    "kelex-cli": "./dist/cli/index.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",

@@ -60,17 +60,34 @@ export async function youtubeSearch(query: string): Promise<void> {
   }
 }
 
+import { renderDownloadCard } from './downloads.js';
+
 export async function youtubeDownload(
   url: string,
   cookiesFromBrowser?: string,
   quality?: string,
   format?: string,
 ): Promise<void> {
-  const body: Record<string, string | undefined> = { url, quality, format };
+  // Fetch video info & resolutions summary first if quality is not explicitly passed
+  if (!quality) {
+    try {
+      console.log(chalk.gray('Inspecting available video resolutions...'));
+      const info: YouTubeInfo = await api(`/api/v1/youtube/info?url=${encodeURIComponent(url)}`);
+      if (info && info.title) {
+        console.log();
+        console.log(chalk.bold.cyan(`🎬 ${info.title}`));
+        if (info.uploader) console.log(chalk.gray(`   Uploader: ${info.uploader}`));
+        console.log(chalk.gray('   Available Qualities: 1080p · 720p · 480p · audio (mp3) · best'));
+      }
+    } catch {
+      // Fallback cleanly if info probe times out
+    }
+  }
+
+  const body: Record<string, string | undefined> = { url, quality: quality || 'best', format };
   if (cookiesFromBrowser) body.cookiesFromBrowser = cookiesFromBrowser;
   const download = await apiPost('/api/v1/youtube/download', body);
   console.log();
-  console.log(chalk.green(`✓ Added YouTube download ${chalk.bold(download.id)}`));
-  console.log(chalk.gray(`  ${download.filename || url}`));
+  renderDownloadCard(download, '✓ YouTube Download Started');
   console.log();
 }

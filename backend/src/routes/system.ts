@@ -3,6 +3,7 @@ import { execSync } from 'child_process';
 import { statfs } from 'fs/promises';
 import os from 'os';
 import { join } from 'path';
+import { downloadManager } from '../services/download-manager.js';
 
 export async function systemRoutes(fastify: FastifyInstance) {
   fastify.get('/system/info', async () => {
@@ -66,5 +67,16 @@ export async function systemRoutes(fastify: FastifyInstance) {
     } catch { /* no-op */ }
 
     return { status: 'ok', tools: checks };
+  });
+
+  fastify.post('/system/speed-limit', async (request) => {
+    const { limit } = (request.body || {}) as { limit?: string };
+    if (!limit) return fastify.httpErrors.badRequest('Speed limit parameter required (e.g. 5M, 500K, or off)');
+    try {
+      const result = downloadManager.setSpeedLimit(limit);
+      return result;
+    } catch (err: any) {
+      return fastify.httpErrors.badRequest(err.message);
+    }
   });
 }

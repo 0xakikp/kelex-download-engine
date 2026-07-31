@@ -5,6 +5,7 @@ import { header } from './styles.js';
 import {
   listDownloads,
   showStats,
+  showStatusLive,
   addDownload,
   pauseDownload,
   resumeDownload,
@@ -21,6 +22,11 @@ import {
   showDownloadInfo,
   openDownload,
   openDownloadDir,
+  setSpeedLimit,
+  changeTheme,
+  searchTorrentsCLI,
+  convertMediaCLI,
+  installExtension,
 } from './commands/index.js';
 
 const COMMANDS = [
@@ -28,51 +34,46 @@ const COMMANDS = [
   'list', 'ls', 'active',
   'pause', 'resume', 'cancel', 'stop', 'retry', 'remove', 'rm', 'delete',
   'youtube info', 'youtube search', 'youtube download',
-  'torrent add',
+  'torrent add', 'search',
+  'limit', 'convert',
+  'theme', 'extension',
   'files', 'file delete',
   'stats', 'status', 's',
-  'info',
-  'config',
-  'open',
-  'open-dir', 'od',
-  'watch',
-  'clear',
-  'help',
-  'quit', 'exit',
+  'info', 'config', 'open', 'open-dir', 'od',
+  'watch', 'clear', 'help', 'quit', 'exit',
 ];
 
 function printHelp(): void {
   console.log();
-  console.log(header('Available Commands'));
+  console.log(header('Available Kelex Commands'));
   console.log();
   const cmds = [
-    ['download <url>', 'Add a new download'],
-    ['list / ls', 'List all downloads'],
-    ['active', 'List active downloads'],
-    ['status / s', 'Show download statistics'],
-    ['info <id>', 'Show download details and saved path'],
-    ['config', 'Show configuration and download directory'],
-    ['open <id>', 'Open a downloaded file'],
-    ['open-dir [id] / od [id]', 'Open the download folder'],
-    ['pause <id>', 'Pause a download'],
-    ['resume <id>', 'Resume a download'],
-    ['cancel / stop <id>', 'Cancel / stop a download'],
-    ['retry <id>', 'Retry a failed download'],
-    ['remove / rm / delete <id>', 'Remove / delete a download'],
-    ['youtube info <url>', 'Show YouTube video info'],
-    ['youtube search <q>', 'Search YouTube'],
-    ['youtube download <url>', 'Add YouTube download'],
-    ['torrent add <url>', 'Add torrent or magnet'],
-    ['files', 'List downloaded files'],
-    ['file delete <name>', 'Delete a downloaded file'],
-    ['stats', 'Show download statistics'],
-    ['watch', 'Live progress (dashboard above is always live)'],
-    ['clear', 'Clear the screen'],
-    ['help', 'Show this help'],
-    ['quit / exit', 'Exit REPL'],
+    ['download <url>', 'Add new HTTP, video, or magnet download'],
+    ['youtube download <url>', 'Download YouTube video/audio'],
+    ['search <query>', 'Search public torrents directly'],
+    ['torrent add <magnet>', 'Add magnet link or torrent'],
+    ['convert <id> <format>', 'Convert video to MP3 or 720p/1080p MP4'],
+    ['limit <speed>', 'Set speed limit (e.g. 5M, 500K, or off)'],
+    ['theme [name]', 'Switch UI theme (cyber, dracula, matrix, nord, sunset)'],
+    ['extension install', 'Auto-load extension in Brave/Chrome/Edge'],
+    ['list / ls', 'List all queued/completed downloads'],
+    ['active', 'List active downloading items'],
+    ['status / s', 'Show engine overview & storage health'],
+    ['info <id>', 'Show detailed download info & saved path'],
+    ['pause <id>', 'Pause an active download'],
+    ['resume <id>', 'Resume a paused download'],
+    ['retry <id|all>', 'Retry a failed download or all failed'],
+    ['cancel / stop <id>', 'Cancel an active download'],
+    ['remove / rm <id>', 'Remove download entry'],
+    ['open <id>', 'Open downloaded file'],
+    ['open-dir / od', 'Open download directory in Finder/Explorer'],
+    ['config', 'Show system configuration'],
+    ['clear', 'Clear screen'],
+    ['help / ?', 'Show this command reference'],
+    ['quit / exit', 'Exit interactive shell'],
   ];
   for (const [cmd, desc] of cmds) {
-    console.log(`  ${chalk.cyan(cmd.padEnd(24))} ${chalk.gray(desc)}`);
+    console.log(`  ${chalk.cyan(cmd.padEnd(25))} ${chalk.gray(desc)}`);
   }
   console.log();
 }
@@ -94,6 +95,29 @@ export async function executeLine(line: string): Promise<boolean> {
         await addDownload(url, undefined, undefined, cookies);
         break;
       }
+
+      case 'limit':
+        if (!args[0]) { console.log(chalk.yellow('Usage: limit <5M|500K|off>')); break; }
+        await setSpeedLimit(args[0]);
+        break;
+
+      case 'theme':
+        await changeTheme(args[0]);
+        break;
+
+      case 'search':
+        if (!args[0]) { console.log(chalk.yellow('Usage: search <query>')); break; }
+        await searchTorrentsCLI(args.join(' '));
+        break;
+
+      case 'convert':
+        if (!args[0]) { console.log(chalk.yellow('Usage: convert <id> [mp3|720p|1080p]')); break; }
+        await convertMediaCLI(args[0], args[1] || 'mp3');
+        break;
+
+      case 'extension':
+        await installExtension(args[1] || args[0]);
+        break;
 
       case 'list':
       case 'ls':
@@ -121,7 +145,7 @@ export async function executeLine(line: string): Promise<boolean> {
         break;
 
       case 'retry':
-        if (!args[0]) { console.log(chalk.yellow('Usage: retry <id>')); break; }
+        if (!args[0]) { console.log(chalk.yellow('Usage: retry <id|all>')); break; }
         await retryDownload(args[0]);
         break;
 
@@ -141,11 +165,12 @@ export async function executeLine(line: string): Promise<boolean> {
           if (!args[1]) { console.log(chalk.yellow('Usage: youtube search <query>')); break; }
           await youtubeSearch(args.slice(1).join(' '));
         } else if (sub === 'download' || sub === 'dl') {
-          if (!args[1]) { console.log(chalk.yellow('Usage: youtube download <url> [--cookies-from-browser <browser>]')); break; }
+          if (!args[1]) { console.log(chalk.yellow('Usage: youtube download <url> [quality]')); break; }
           const url = args[1];
+          const quality = args[2] && !args[2].startsWith('--') ? args[2] : undefined;
           const cbIdx = args.indexOf('--cookies-from-browser');
           const cookies = cbIdx >= 0 ? args[cbIdx + 1] : undefined;
-          await youtubeDownload(url, cookies);
+          await youtubeDownload(url, cookies, quality);
         } else {
           console.log(chalk.yellow('Usage: youtube <info|search|download> ...'));
         }
@@ -184,7 +209,7 @@ export async function executeLine(line: string): Promise<boolean> {
 
       case 'status':
       case 's':
-        await showStats();
+        await showStatusLive();
         break;
 
       case 'info':
@@ -207,7 +232,7 @@ export async function executeLine(line: string): Promise<boolean> {
         break;
 
       case 'watch':
-        console.log(chalk.gray('The dashboard above is live — it updates continuously.'));
+        await showStatusLive();
         break;
 
       case 'clear':

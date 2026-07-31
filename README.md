@@ -10,6 +10,7 @@ A terminal-first download manager for macOS, Windows, and Linux. Download anythi
 - **Video conversion** — MP4, MP3, WebM, AVI, MKV, MOV, FLAC, WAV, AAC, OGG, M4A
 - **Live dashboard** — `kelex` opens a real-time dashboard (active downloads, bandwidth graph, torrent seeds/leechers)
 - **Styled CLI** — ASCII banner, gradient headers, boxed panels, progress bars, emojis
+- **Browser Extension** — 1-click downloads & right-click context menu integration for Chrome, Firefox, Edge, and Brave
 - **Browser cookies** — Use `--cookies-from-browser chrome|firefox|safari|edge|brave` for private/protected downloads
 - **One-click open** — Open downloaded files or their folders straight from the terminal
 - **Exact errors** — Full backend error messages, with `--debug` for stack traces
@@ -26,22 +27,23 @@ A terminal-first download manager for macOS, Windows, and Linux. Download anythi
 | CLI | Node.js + Commander + Chalk + Ora |
 | Real-time | WebSocket progress feed |
 
-## Quick Start
+## Quick Start (1-Click Setup)
 
 ```bash
-# Install dependencies
-npm install
-cd backend && npm install && cd ..
+# ⚡ 1-Click Installer (Builds backend, links kelex CLI, auto-loads browser extension)
+./install.sh
 
-# Build backend & CLI
-npm run build
-
-# Run from project directory
-./kelex
-
-# Or make it globally available
-npm link
+# Start Kelex CLI dashboard
 kelex
+```
+
+### Manual Install
+
+```bash
+npm install && cd backend && npm install && cd ..
+npm run build
+npm link
+kelex extension install
 ```
 
 ## Usage
@@ -201,6 +203,25 @@ npm run cli -- server stop
 ```
 
 The backend API runs on `http://localhost:3001` by default.
+
+## Web Browser Extension (Chrome, Edge, Brave, Firefox)
+
+Kelex includes a native **Manifest V3 Web Extension** located in the `extension/` directory.
+
+### How to Install (Developer Mode)
+
+1. Open your browser extensions page:
+   - **Chrome / Brave / Edge**: `chrome://extensions/`
+   - **Firefox**: `about:debugging#/runtime/this-firefox`
+2. Enable **Developer mode** (toggle switch in the top right).
+3. Click **Load unpacked** (or "Load Temporary Add-on").
+4. Select the `extension/` directory in this repository.
+
+### Features
+- ⚡ **1-Click Download Current Tab**: Click the extension icon on any YouTube video, direct file, or web page to queue it instantly.
+- 🖱️ **Context Menu**: Right-click any link, video, audio, or image $\rightarrow$ **"⬇️ Download with Kelex"**.
+- 🔐 **Session Cookie Forwarding**: Automatically forwards current session cookies for private, paywalled, or age-restricted downloads.
+- 🟢 **Live Backend Status & Speed**: Shows real-time backend connection status, active count, and download speeds.
 
 ## API Endpoints
 

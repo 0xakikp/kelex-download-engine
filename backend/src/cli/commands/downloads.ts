@@ -71,6 +71,27 @@ export async function showStats(): Promise<void> {
   console.log();
 }
 
+export function renderDownloadCard(download: Download, title = 'Download Added'): void {
+  const color = statusColors[download.status] || chalk.cyan;
+  const emoji = statusEmojis[download.status] || '⬇️';
+  const name = chalk.bold(download.filename || download.url);
+  const bar = progressBar(download.progress || 0, 20);
+  const percent = chalk.bold(`${(download.progress || 0).toFixed(1)}%`);
+  const typeBadge = chalk.cyan(`[${(download.type || 'http').toUpperCase()}]`);
+
+  const lines = [
+    `${emoji} ${name}`,
+    `   ${bar} ${percent}  ${formatSpeed(download.speed || 0)}  ${formatSize(download.size || 0)}`,
+    `   ${color((download.status || 'queued').toUpperCase())} · ${chalk.gray(download.id.slice(0, 8))} · ${typeBadge}`,
+  ];
+
+  if (download.outputPath) {
+    lines.push(`   💾 ${chalk.gray(download.outputPath)}`);
+  }
+
+  box(title, lines.join('\n'));
+}
+
 export async function addDownload(
   url: string,
   type?: string,
@@ -84,11 +105,7 @@ export async function addDownload(
 
   const download: Download = await apiPost('/api/v1/downloads', body);
   console.log();
-  console.log(chalk.green(`✓ Added download ${chalk.bold(download.id)}`));
-  console.log(chalk.gray(`  ${download.filename || url}`));
-  if (download.outputPath) {
-    console.log(chalk.gray(`  → ${download.outputPath}`));
-  }
+  renderDownloadCard(download, '✓ Download Started');
   console.log();
 }
 
@@ -108,8 +125,28 @@ export async function cancelDownload(id: string): Promise<void> {
 }
 
 export async function retryDownload(id: string): Promise<void> {
-  await apiPost(`/api/v1/downloads/${id}/retry`);
-  console.log(chalk.cyan(`↻ Retrying ${id}`));
+  if (!id || id === 'all' || id === 'failed') {
+    const data = await api('/api/v1/downloads');
+    const failed = (data.downloads || []).filter((d: Download) => d.status === 'error');
+    if (failed.length === 0) {
+      console.log(chalk.gray('No failed downloads to retry.'));
+      return;
+    }
+    for (const d of failed) {
+      await apiPost(`/api/v1/downloads/${d.id}/retry`);
+      console.log(chalk.cyan(`↻ Retrying ${d.filename || d.id}`));
+    }
+    return;
+  }
+
+  const data = await api('/api/v1/downloads');
+  const match = (data.downloads || []).find(
+    (d: Download) => d.id === id || d.id.startsWith(id) || d.filename === id || d.filename.startsWith(id)
+  );
+
+  const targetId = match ? match.id : id;
+  await apiPost(`/api/v1/downloads/${targetId}/retry`);
+  console.log(chalk.cyan(`↻ Retrying ${match?.filename || targetId}`));
 }
 
 export async function removeDownload(id: string): Promise<void> {
