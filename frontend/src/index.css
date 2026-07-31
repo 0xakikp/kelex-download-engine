@@ -1,20 +1,20 @@
 :root {
-  --bg-app: #0d1117; /* Slate Black */
-  --text-main: #c9d1d9; /* Off-white/Light Gray */
-  --text-dim: #8b949e; /* Muted Gray */
-  --text-white: #f0f6fc; /* Bright White/Silver */
-  --text-muted: #30363d; /* Dark Gray for secondary borders */
+  --bg-app: #030303;
+  --text-main: #00ff66; /* Terminal Green */
+  --text-dim: #00aa44;
+  --text-white: #33ff77;
+  --text-muted: #4b5563;
   
-  --primary: #58a6ff; /* Soft Blue for active states */
-  --secondary: #3fb950; /* Soft Green for completed states */
-  --accent: #bc8cff; /* Soft Purple */
+  --primary: #00ff66;
+  --secondary: #33ff77;
+  --accent: #ff0055;
   
-  --success: #3fb950;
-  --warning: #d29922;
-  --danger: #f85149;
+  --success: #00ff66;
+  --warning: #ffcc00;
+  --danger: #ff3333;
   
-  --border-light: #21262d; /* Subtle dark border */
-  --border-active: #30363d;
+  --border-light: #112211;
+  --border-active: #00ff66;
 }
 
 * {
