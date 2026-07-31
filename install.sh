@@ -32,6 +32,7 @@ echo ""
 echo "📦 1/4 Installing Node dependencies..."
 npm install --quiet
 cd backend && npm install --quiet && cd ..
+cd frontend && npm install --quiet && cd ..
 
 echo "🔨 2/4 Building Kelex Engine & CLI..."
 npm run build

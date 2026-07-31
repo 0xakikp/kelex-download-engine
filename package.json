@@ -17,7 +17,7 @@
   },
   "scripts": {
     "dev": "cd backend && npm run dev",
-    "build": "cd backend && npm run build",
+    "build": "cd frontend && npm run build && cd ../backend && npm run build",
     "start": "cd backend && npm run start",
     "cli": "cd backend && npm run cli"
   },

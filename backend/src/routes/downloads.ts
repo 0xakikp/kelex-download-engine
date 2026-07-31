@@ -68,6 +68,13 @@ export async function downloadRoutes(fastify: FastifyInstance) {
     return { success: true };
   });
 
+  fastify.post('/:id/retry', async (request) => {
+    const { id } = request.params as { id: string };
+    const ok = downloadManager.retry(id);
+    if (!ok) return fastify.httpErrors.badRequest('Cannot retry download');
+    return { success: true };
+  });
+
   fastify.post('/:id/convert', async (request) => {
     const { id } = request.params as { id: string };
     const { format = 'mp3' } = (request.body || {}) as { format?: string };

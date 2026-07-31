@@ -1,0 +1,42 @@
+:root {
+  --bg-app: #030303;
+  --text-main: #00ff66; /* Terminal Green */
+  --text-dim: #00aa44;
+  --text-white: #ffffff;
+  --text-muted: #4b5563;
+  
+  --primary: #00ff66;
+  --secondary: #00e5ff;
+  --accent: #ff0055;
+  
+  --success: #00ff66;
+  --warning: #ffcc00;
+  --danger: #ff3333;
+  
+  --border-light: #112211;
+  --border-active: #00ff66;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
