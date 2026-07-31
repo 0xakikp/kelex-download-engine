@@ -254,3 +254,10 @@
   color: var(--text-dim);
   font-size: 0.9rem;
 }
+
+/* Status Text Colors */
+.status-text-completed { color: var(--success); }
+.status-text-downloading { color: var(--primary); }
+.status-text-error { color: var(--danger); }
+.status-text-paused { color: var(--warning); }
+.status-text-queued { color: var(--text-dim); }
