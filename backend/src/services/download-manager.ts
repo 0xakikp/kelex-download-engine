@@ -869,6 +869,18 @@ class DownloadManager {
     this.broadcast(download);
   }
 
+  pauseAll() {
+    for (const id of this.downloads.keys()) {
+      this.pause(id);
+    }
+  }
+
+  resumeAll() {
+    for (const id of this.downloads.keys()) {
+      this.resume(id);
+    }
+  }
+
   private broadcast(download: Download) {
     broadcastProgress(download);
     this.saveState();

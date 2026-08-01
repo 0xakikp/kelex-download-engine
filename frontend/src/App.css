@@ -65,6 +65,12 @@
   outline: none;
 }
 
+.prompt-textarea {
+  resize: none;
+  min-height: 1.25rem;
+  overflow-y: auto;
+}
+
 .prompt-options {
   display: flex;
   gap: 1.5rem;

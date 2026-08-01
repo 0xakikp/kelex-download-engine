@@ -4,7 +4,7 @@ import { downloadManager } from '../services/download-manager.js';
 import { convertMedia } from '../services/converter.js';
 
 const createSchema = z.object({
-  url: z.string().url(),
+  url: z.string(),
   filename: z.string().optional(),
   type: z.enum(['http', 'youtube', 'torrent', 'magnet', 'convert']).optional(),
   priority: z.enum(['highest', 'high', 'normal', 'low', 'lowest']).optional(),
@@ -36,8 +36,39 @@ export async function downloadRoutes(fastify: FastifyInstance) {
 
   fastify.post('/', async (request, reply) => {
     const body = createSchema.parse(request.body);
-    const download = downloadManager.create(body);
-    return reply.status(201).send(download);
+    
+    // Split input URL string by newlines or spaces to support batch downloads
+    const urls = body.url.split(/[\r\n\s]+/).map(u => u.trim()).filter(u => {
+      try {
+        new URL(u);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
+    if (urls.length === 0) {
+      return reply.status(400).send({ error: 'No valid URLs provided' });
+    }
+
+    if (urls.length === 1) {
+      const download = downloadManager.create({ ...body, url: urls[0] });
+      return reply.status(201).send(download);
+    }
+
+    // Batch creation
+    const created = urls.map(url => downloadManager.create({ ...body, url }));
+    return reply.status(201).send({ success: true, count: created.length, downloads: created });
+  });
+
+  fastify.post('/pause-all', async () => {
+    downloadManager.pauseAll();
+    return { success: true };
+  });
+
+  fastify.post('/resume-all', async () => {
+    downloadManager.resumeAll();
+    return { success: true };
   });
 
   fastify.post('/:id/pause', async (request) => {

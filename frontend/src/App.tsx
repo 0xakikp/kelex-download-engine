@@ -18,6 +18,8 @@ interface Download {
   error?: string;
   quality?: string;
   format?: string;
+  seeds?: number;
+  leechers?: number;
 }
 
 interface Stats {
@@ -188,6 +190,24 @@ function App() {
     }
   };
 
+  const handlePauseAll = async () => {
+    try {
+      await fetch('/api/v1/downloads/pause-all', { method: 'POST' });
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleResumeAll = async () => {
+    try {
+      await fetch('/api/v1/downloads/resume-all', { method: 'POST' });
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Text-based progress bar drawing
   const drawProgressBar = (progress: number) => {
     const width = 20;
@@ -215,6 +235,10 @@ function App() {
           <div>COMPLETED: <span>{stats.completed}</span></div>
           <div>SPEED: <span>{formatSpeed(stats.totalSpeed)}</span></div>
           <div>DISK_FREE: <span>{diskFree}</span></div>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
+            <button onClick={handlePauseAll} className="action-link" style={{ textDecoration: 'underline' }}>[PAUSE ALL]</button>
+            <button onClick={handleResumeAll} className="action-link" style={{ textDecoration: 'underline' }}>[RESUME ALL]</button>
+          </div>
         </div>
       </header>
 
@@ -238,15 +262,21 @@ function App() {
         <form onSubmit={handleAddDownload}>
           <div className="prompt-line">
             <span className="prompt-symbol">kelex add --url</span>
-            <input 
-              type="text" 
-              className="prompt-input"
-              placeholder="http://example.com/file.zip"
+            <textarea 
+              className="prompt-input prompt-textarea"
+              placeholder="http://example.com/file.zip (Shift+Enter for multiple URLs)"
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAddDownload(e);
+                }
+              }}
               disabled={isSubmitting}
               autoComplete="off"
               spellCheck={false}
+              rows={1}
             />
             <span className="cursor-blink">_</span>
           </div>
@@ -322,6 +352,14 @@ function App() {
                     <div>SPEED: <span>{formatSpeed(d.speed)}</span></div>
                     <div>ETA: <span>{d.eta || '--'}</span></div>
                     <div>STATUS: <span className={`status-text-${d.status}`}>{d.status.toUpperCase()}</span></div>
+                    {d.type === 'torrent' || d.type === 'magnet' ? (
+                      <>
+                        <div>SEEDS: <span>{d.seeds || 0}</span></div>
+                        <div>PEERS: <span>{d.leechers || 0}</span></div>
+                      </>
+                    ) : (
+                      <div>CONN: <span>{d.connections || 0}</span></div>
+                    )}
                   </div>
                 </div>
 
