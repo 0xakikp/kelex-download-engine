@@ -182,9 +182,25 @@ class DownloadManager {
 
   create(input: DownloadCreateInput): Download {
     const id = uuidv4();
+    
+    // Auto-infer download type if not explicitly provided
+    let type = input.type;
+    if (!type) {
+      const url = input.url;
+      if (url.startsWith('magnet:')) {
+        type = 'magnet';
+      } else if (/\.torrent$/i.test(url) || url.startsWith('torrent:')) {
+        type = 'torrent';
+      } else if (/youtube\.com|youtu\.be|vimeo\.com|pornhub\.com|eporner\.com|spankbang\.com|xvideos\.com|xnxx\.com|dailymotion\.com|bilibili\.com|twitch\.tv/i.test(url)) {
+        type = 'youtube';
+      } else {
+        type = 'http';
+      }
+    }
+
     let filename = input.filename || basename(input.url) || 'download';
     // For YouTube, use a safe default name if URL basename is just "watch" or empty
-    if (input.type === 'youtube' && (!filename || filename === 'watch' || filename === 'watch_v')) {
+    if (type === 'youtube' && (!filename || filename === 'watch' || filename === 'watch_v')) {
       filename = 'youtube_video_' + id.slice(0, 8);
     }
     const cleanName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -193,7 +209,7 @@ class DownloadManager {
       id,
       filename: cleanName,
       url: input.url,
-      type: input.type || 'http',
+      type: type,
       status: 'queued',
       progress: 0,
       size: 0,

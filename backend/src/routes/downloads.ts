@@ -39,6 +39,7 @@ export async function downloadRoutes(fastify: FastifyInstance) {
     
     // Split input URL string by newlines or spaces to support batch downloads
     const urls = body.url.split(/[\r\n\s]+/).map(u => u.trim()).filter(u => {
+      if (u.startsWith('magnet:')) return true;
       try {
         new URL(u);
         return true;
